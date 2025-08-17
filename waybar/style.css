@@ -1,0 +1,206 @@
+/* Global styles */
+* {
+    border: none;
+    border-radius: 0;
+    font-family: JetBrainsMono Nerd Font, monospace;
+    font-weight: bold;
+    font-size: 14px;
+    min-height: 0;
+}
+
+window#waybar {
+    background: rgba(21, 18, 27, 0.0);
+    color: #cdd6f4;
+}
+
+/* Common module styles */
+#custom-launcher,
+#taskbar,
+#window,
+#mpris,
+#clock,
+#battery,
+#pulseaudio,
+#network,
+#bluetooth,
+#power-profiles-daemon,
+#cpu,
+#memory,
+#workspaces,
+#custom-updates,
+#tray,
+#custom-power,
+#backlight {
+    color: #dddddd;
+    background: rgba(0, 0, 0, 0.777);
+    padding: 0px 10px;
+    margin: 10px 0px 0px 0px;
+    margin-top: 1px;
+    margin-bottom: 0px;
+    border: 0px solid #181825;
+}
+
+/* Common hover styles */
+#custom-launcher:hover,
+#mpris:hover,
+#cpu:hover,
+#memory:hover,
+#network:hover,
+#bluetooth:hover,
+#power-profiles-daemon:hover,
+#battery:hover,
+#backlight:hover,
+#pulseaudio:hover,
+#custom-updates:hover,
+#tray:hover,
+#clock:hover,
+#custom-power:hover {
+    background: #cdd6f4;
+    color: #11111b;
+}
+
+/* ===== LEFT MODULES ===== */
+
+/* custom/launcher */
+#custom-launcher {
+    border-radius: 10px;
+    margin-left: 10px;
+    padding: 0px 10px 0px 5px;
+}
+
+/* hyprland/workspaces */
+#workspaces {
+    border-radius: 10px;
+    margin-left: 5px;
+    padding: 0px 5px;
+}
+
+#workspaces button {
+    padding: 5px;
+    color: #777777;
+    margin-right: 5px;
+}
+
+#workspaces button.active {
+    color: #ffffff;
+}
+
+#workspaces button.focused {
+    color: #dddddd;
+    background: #eba0ac;
+    border-radius: 10px;
+}
+
+#workspaces button.urgent {
+    color: #11111b;
+    background: #a6e3a1;
+    border-radius: 10px;
+}
+
+#workspaces button:hover {
+    background: #cdd6f4;
+    color: #11111b;
+    border-radius: 10px;
+}
+
+/* ===== RIGHT MODULES ===== */
+
+#memory {
+    border-radius: 10px 0px 0px 10px;
+}
+
+#cpu {
+    border-radius: 0px 0px 0px 0px;
+}
+
+#network {
+    border-radius: 10px 0px 0px 10px;
+}
+
+#bluetooth {
+  font-size: 17px;
+}
+
+/* power-profiles-daemon */
+/* Uses common styles only */
+
+/* battery */
+#battery {
+    border-radius: 0px 0px 0px 0px;
+    font-size: 15px;
+}
+
+@keyframes blink_critical {
+    0% { color: inherit; }
+    50% { color: #f38ba8; }
+    100% { color: inherit; }
+}
+
+@keyframes blink_warning {
+    0% { color: inherit; }
+    50% { color: #f9e2af; }
+    100% { color: inherit; }
+}
+
+#battery.critical:not(.charging) {
+    animation: blink_critical 2.5s infinite;
+}
+
+#battery.warning:not(.charging) {
+    animation: blink_warning 5s infinite;
+}
+
+/* backlight */
+#backlight {
+    border-radius: 0px 0px 0px 0px;
+}
+
+/* pulseaudio */
+#pulseaudio {
+    border-radius: 10px 0px 0px 10px;
+    border-left: 0px;
+    border-right: 0px;
+    padding: 0px 15px 0px 15px;
+}
+
+/* pulseaudio#microphone */
+#pulseaudio.microphone {
+    border-radius: 0px 0px 0px 0px;
+    border-left: 0px;
+    border-right: 0px;
+    padding: 0px 10px 0px 10px;
+}
+
+/* tray */
+#tray {
+    border-radius: 0px 0px 0px 0px;
+}
+
+#tray button {
+  min-width: 10px;
+}
+
+/* clock */
+#clock {
+    border-radius: 0px;
+    margin: 1px 0px 0px 0px;
+    border-right: 0px;
+}
+
+/* custom/power */
+#custom-power {
+    border-radius: 0px 10px 10px 0px;
+    margin: 1px 5px 0px 0px;
+    padding: 0px 10px 0px 5px;
+    min-width: 20px;
+}
+
+/* ===== EMPTY STATE STYLES ===== */
+#taskbar.empty,
+#mpris.stopped,
+window#waybar.empty #window {
+    opacity: 0;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+}

@@ -10,7 +10,6 @@
 	"vim.useSystemClipboard": true,
 	"explorer.confirmDelete": false,
 	"editor.autoClosingOvertype": "always",
-	"editor.formatOnSave": true,
 	"C_Cpp.codeFolding": "disabled",
 	"C_Cpp.vcFormat.space.beforeBlockOpenBrace": false,
 	"C_Cpp.formatting": "disabled",
@@ -85,5 +84,7 @@
 		"editor.selectionBackground": "#3d375e",
 		"editor.selectionHighlightBackground": "#3d375efe",
 		"editor.inactiveSelectionBackground": "#3d375efe",
+		"terminal.selectionBackground": "#3d375efe"
 	},
+	"explorer.confirmPasteNative": false
 }

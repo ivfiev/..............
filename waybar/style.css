@@ -52,7 +52,7 @@ window#waybar {
 #backlight:hover,
 #pulseaudio:hover,
 #custom-updates:hover,
-#tray:hover,
+/* #tray:hover, */
 #clock:hover,
 #custom-power:hover {
     background: #cdd6f4;

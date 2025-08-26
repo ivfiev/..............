@@ -77,14 +77,9 @@
 	"go.toolsEnvVars": {
 		"GOPLS_TELEMETRY": "off"
 	},
-	"workbench.colorTheme": "Aura Dark",
 	"editor.fontFamily": "JetBrainsMono Nerd Font Mono",
 	"workbench.colorCustomizations": {
-		"editorCursor.foreground": "#00ffff",
-		"editor.selectionBackground": "#3d375e",
-		"editor.selectionHighlightBackground": "#3d375efe",
-		"editor.inactiveSelectionBackground": "#3d375efe",
-		"terminal.selectionBackground": "#3d375efe"
+	//	"editorCursor.foreground": "#00ffff",
 	},
 	"explorer.confirmPasteNative": false
 }

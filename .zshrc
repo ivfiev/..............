@@ -8,7 +8,7 @@ autoload -Uz compinit
 compinit
 # End of lines added by compinstall
 #
-PS1='%F{cyan}[%n %F{green}%~%f%F{cyan}] '
+PS1='%F{cyan}[%n %F{magenta}%~%f%F{cyan}] '
 
 HISTFILE=~/.zsh_history
 HISTSIZE=10000

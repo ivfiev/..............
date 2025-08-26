@@ -14,8 +14,8 @@ export PATH="$HOME/.ghcup/bin:$PATH"
 
 # pyenv shite
 export PYENV_ROOT="$HOME/.pyenv"
-[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
+#[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+#eval "$(pyenv init -)"
 
 alias oh-come-on='/home/fi/dev/oh-come-on/bin/oh-come-on'
 # alias code='code --enable-features=UseOzonePlatform --ozone-platform=wayland'

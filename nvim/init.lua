@@ -45,17 +45,12 @@ vim.opt.hlsearch = false
 vim.ignorecase = true
 vim.smartcase = true
 
--- clipboard integration (requires +clipboard build of nvim)
-vim.opt.clipboard = "unnamedplus"
+vim.opt.clipboard = "unnamedplus" -- +clipboard
 vim.opt.swapfile = false
 
--- netrw, Open directories in the same window instead of a split
 vim.g.netrw_browse_split = 0
--- Sort directories first
 vim.g.netrw_liststyle = 3
--- Show hidden files
 vim.g.netrw_list_hide = ""
--- Set netrw window width
 vim.g.netrw_winsize = 25
 
 vim.opt.statusline = "%f %y %m %r %= %l:%c %p%%"
@@ -74,8 +69,15 @@ vim.keymap.set({ "x" }, "<", "<gv")
 vim.keymap.set({ "x" }, "<C-c>", function()
 	vim.cmd('normal! "+y')
 end)
-vim.keymap.set({ "n", "i", "x" }, "<C-s>", "<Cmd>:w<CR>")
+vim.keymap.set({ "n", "i", "x" }, "<C-s>", "<Cmd>:w<CR><Esc>")
 vim.keymap.set({ "n" }, "T", "<Cmd>bd<CR>")
+vim.keymap.set({ "n" }, "<Tab>", "<Cmd>bnext<CR>")
+vim.keymap.set({ "n" }, "<S-Tab>", "<Cmd>bprev<CR>")
+vim.keymap.set({ "x" }, "p", '"_dP')
+vim.keymap.set({ "n", "x" }, "<C-v>", "p", { remap = true })
+vim.keymap.set("i", "<C-v>", "<Esc>pa", { remap = true })
+vim.keymap.set("i", "<C-BS>", "<Esc>vbs")
+vim.keymap.set({ "n", "i", "x" }, "<C-0>", "<C-v>")
 
 vim.api.nvim_create_autocmd("filetype", {
 	pattern = "netrw",
@@ -118,11 +120,27 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
+-- is this needed anymore with branch=master?
 local original = vim.lsp.util.make_position_params
 vim.lsp.util.make_position_params = function(pos, encoding, ...)
 	encoding = encoding or "utf-16" -- explicitly set
 	return original(pos, encoding, ...)
 end
+
+vim.api.nvim_create_autocmd("VimEnter", {
+	once = true,
+	callback = function()
+		vim.defer_fn(function()
+			local arg = vim.fn.argv(0)
+			local stat = arg ~= "" and vim.loop.fs_stat(arg) or nil
+			if stat and stat.type == "directory" then
+				vim.cmd("Neotree buffers")
+				vim.cmd("wincmd h")
+				vim.cmd("wincmd h")
+			end
+		end, 50)
+	end,
+})
 
 -- setup all the plugin shite
 require("lazy").setup({
@@ -144,7 +162,22 @@ require("lazy").setup({
 			build = ":TSUpdate",
 			config = function()
 				require("nvim-treesitter.configs").setup({
-					ensure_installed = { "lua", "python", "javascript", "html", "css", "bash", "c", "go", "c_sharp" },
+					ensure_installed = {
+						"lua",
+						"python",
+						"javascript",
+						"html",
+						"css",
+						"bash",
+						"c",
+						"go",
+						"c_sharp",
+						"json",
+						"yaml",
+						"sql",
+						"dockerfile",
+						"hcl",
+					},
 					sync_install = false,
 					auto_install = true,
 					highlight = {
@@ -153,6 +186,7 @@ require("lazy").setup({
 					},
 					indent = { enable = true },
 				})
+				vim.filetype.add({ extension = { yml = "yaml" } })
 			end,
 		},
 
@@ -176,7 +210,7 @@ require("lazy").setup({
 				local builtin = require("telescope.builtin")
 				vim.keymap.set("n", "<C-p>", builtin.find_files)
 				vim.keymap.set("n", "<C-f>", builtin.live_grep)
-				vim.keymap.set("n", "t", builtin.buffers)
+				--vim.keymap.set("n", "t", builtin.buffers)
 				vim.keymap.set("n", "<C-r>", builtin.resume)
 			end,
 		},
@@ -185,11 +219,35 @@ require("lazy").setup({
 			"nvim-lualine/lualine.nvim",
 			dependencies = { "nvim-tree/nvim-web-devicons" },
 			config = function()
+				local theme = require("lualine.themes.nightfly")
+				theme.normal.c.bg = "#1a1b26"
+				theme.inactive.c.bg = "#1a1b26"
 				require("lualine").setup({
 					options = {
-						theme = "auto",
+						theme = theme,
 					},
 				})
+			end,
+		},
+
+		{
+			"akinsho/bufferline.nvim",
+			enabled = false,
+			version = "*",
+			dependencies = "nvim-tree/nvim-web-devicons",
+			config = function()
+				require("bufferline").setup({
+					options = {
+						offsets = {
+							{
+								filetype = "neo-tree",
+								text = "",
+								--		padding = 1,
+							},
+						},
+					},
+				})
+				vim.api.nvim_set_hl(0, "BufferLineFill", { bg = "#1a1b26" })
 			end,
 		},
 
@@ -199,7 +257,22 @@ require("lazy").setup({
 			config = function()
 				require("noice").setup({
 					cmdline = { enabled = true },
-					messages = { enabled = true },
+					lsp = {
+						progress = { enabled = false },
+					},
+					messages = {
+						enabled = true,
+					},
+					commands = {
+						all = {
+							view = "popup",
+						},
+					},
+					views = {
+						mini = {
+							timeout = 5000,
+						},
+					},
 				})
 			end,
 		},
@@ -216,7 +289,8 @@ require("lazy").setup({
 			config = function()
 				require("neo-tree").setup({
 					window = {
-						position = "float",
+						--position = "float",
+						--auto_expand_width = true,
 						popup = {
 							size = {
 								height = "100%",
@@ -231,19 +305,34 @@ require("lazy").setup({
 						mappings = {
 							["l"] = "open",
 							["h"] = "open",
+							["<C-l>"] = "open",
 							["t"] = false,
 							["f"] = false,
 						},
 					},
 					filesystem = {
+						window = {
+							position = "left",
+						},
 						follow_current_file = {
 							enabled = true,
 							leave_dirs_open = true,
 						},
 						hijack_netrw_behavior = "open_default", -- replace netrw
 					},
+					buffers = {
+						window = {
+							position = "right",
+						},
+						show_unloaded = true,
+					},
 				})
-				vim.keymap.set("n", "<C-`>", "<cmd>Neotree toggle reveal<CR>", { desc = "Neo-tree fullscreen" })
+				vim.keymap.set(
+					"n",
+					"<C-`>",
+					"<Cmd>Neotree buffers toggle<CR><Cmd>Neotree filesystem toggle<CR>",
+					{ desc = "Toggle Neotree stuff" }
+				)
 			end,
 		},
 
@@ -274,13 +363,28 @@ require("lazy").setup({
 						enabled = false,
 					},
 				},
+				jump = {
+					-- autojump = true,
+				},
+				label = {
+					rainbow = {
+						enabled = true,
+					},
+				},
 			},
 			keys = {
 				{
 					"f",
 					mode = { "n", "x" },
 					function()
-						require("flash").jump()
+						require("flash").remote()
+					end,
+				},
+				{
+					"t",
+					mode = { "n", "x" },
+					function()
+						require("flash").treesitter()
 					end,
 				},
 			},
@@ -337,7 +441,7 @@ require("lazy").setup({
 						--map("gd", require("omnisharp_extended").lsp_definition, "[G]oto [D]efinition")
 						map("gd", telescope.lsp_definitions, "[G]oto [D]efinition")
 
-						map("<C-i>", vim.lsp.buf.hover, "[H]oover", { "n" })
+						map("<C-h>", vim.lsp.buf.hover, "[H]oover", { "n", "i" })
 
 						-- WARN: This is not Goto Definition, this is Goto Declaration.
 						--  For example, in C this would take you to the header.
@@ -597,6 +701,8 @@ require("lazy").setup({
 				keymap = {
 					["<C-l>"] = { "accept", "fallback" },
 					["<CR>"] = { "accept", "fallback" },
+					["<Tab>"] = { "accept", "fallback" },
+					["<S-Tab>"] = nil,
 					-- 'default' (recommended) for mappings similar to built-in completions
 					--   <c-y> to accept ([y]es) the completion.
 					--    This will auto-import if your LSP supports it.
@@ -630,17 +736,18 @@ require("lazy").setup({
 				completion = {
 					-- By default, you may press `<c-space>` to show the documentation.
 					-- Optionally, set `auto_show = true` to show the documentation after a delay.
-					documentation = { auto_show = true, auto_show_delay_ms = 500 },
+					documentation = { auto_show = true, auto_show_delay_ms = 2000 },
 				},
 
 				sources = {
-					default = { "lsp", "path", "snippets", "lazydev" },
+					default = { "lsp", "path", "snippets", "lazydev", "buffer" },
 					providers = {
 						lazydev = { module = "lazydev.integrations.blink", score_offset = 100 },
 					},
 				},
 
 				--snippets = { preset = "luasnip" },
+				--
 
 				-- Blink.cmp includes an optional, recommended rust fuzzy matcher,
 				-- which automatically downloads a prebuilt binary when enabled.

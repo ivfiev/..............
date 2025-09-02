@@ -284,7 +284,7 @@ require("lazy").setup({
 						hijack_netrw_behavior = "open_default", -- replace netrw
 					},
 				})
-				vim.keymap.set({ "n" }, "<leader>fs", "<Cmd>Neotree filesystem toggle<CR>", { silent = true })
+				vim.keymap.set({ "n" }, "<leader>fs", "<Cmd>Neotree filesystem reveal<CR>", { silent = true })
 			end,
 		},
 
@@ -351,6 +351,11 @@ require("lazy").setup({
 			opts = {
 				ui = {
 					position = "center",
+					persist_tags = true,
+					preselect_current = true,
+				},
+				hints = {
+					dictionary = "asdflgnmiohvcpertqwxzuyb",
 				},
 			},
 		},
@@ -390,8 +395,10 @@ require("lazy").setup({
 						map("gr", telescope.lsp_references, "[G]oto [R]eferences")
 						map("gi", telescope.lsp_implementations, "[G]oto [I]mplementation")
 						map("gd", telescope.lsp_definitions, "[G]oto [D]efinition")
+						map("ge", telescope.diagnostics, "[G]oto [E]rror")
 						map("gh", vim.lsp.buf.hover, "[H]oover", { "n" })
 
+						--map("[e", vim.diagnostic.goto_prev())     check out trouble.nvim
 						--map("", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
 
 						-- Fuzzy find all the symbols in your current document.

@@ -1,3 +1,4 @@
+# maybe drop this
 fpath+=~/.zsh/zsh-completions/src
 # The following lines were added by compinstall
 

@@ -6,6 +6,9 @@ vim.opt.number = true
 vim.opt.relativenumber = false
 vim.opt.cursorline = true
 vim.opt.scrolloff = 5
+vim.opt.foldmethod = "indent"
+vim.opt.foldlevel = 99
+vim.opt.winborder = "single"
 
 -- spaces
 vim.opt.tabstop = 2
@@ -173,6 +176,7 @@ require("lazy").setup({
 				local builtin = require("telescope.builtin")
 				require("telescope").setup({
 					defaults = {
+						path_display = { "truncate" },
 						layout_strategy = "flex",
 						layout_config = {
 							prompt_position = "top",
@@ -213,6 +217,7 @@ require("lazy").setup({
 					cmdline = { enabled = true },
 					lsp = {
 						progress = { enabled = false },
+						hover = { enabled = false },
 					},
 					messages = {
 						enabled = true,
@@ -348,21 +353,56 @@ require("lazy").setup({
 					desc = "Open Snipe buffer menu",
 				},
 			},
-			opts = {
-				ui = {
-					position = "center",
-					persist_tags = true,
-					preselect_current = true,
-				},
-				hints = {
-					dictionary = "asdflgnmiohvcpertqwxzuyb",
-				},
-			},
+			config = function()
+				local snipe = require("snipe")
+				snipe.setup({
+					ui = {
+						position = "center",
+						persist_tags = true,
+						preselect_current = true,
+					},
+					hints = {
+						dictionary = "abcdefghilmnopqrstuvwxyz",
+					},
+					sort = "last",
+				})
+				snipe.ui_select_menu = require("snipe.menu"):new({ position = "center" })
+				snipe.ui_select_menu:add_new_buffer_callback(function(m)
+					vim.keymap.set("n", "<esc>", function()
+						m:close()
+					end, { nowait = true, buffer = m.buf })
+				end)
+				vim.ui.select = snipe.ui_select
+			end,
+		},
+
+		{
+			"lukas-reineke/indent-blankline.nvim",
+			main = "ibl",
+			config = function()
+				local highlight = {
+					"c3",
+				}
+				local hooks = require("ibl.hooks")
+				hooks.register(hooks.type.HIGHLIGHT_SETUP, function()
+					vim.api.nvim_set_hl(0, "c3", { fg = "#003333" })
+				end)
+				require("ibl").setup({
+					indent = {
+						highlight = highlight,
+						char = "┆",
+					},
+					scope = {
+						enabled = false,
+					},
+				})
+			end,
 		},
 
 		{
 			"seblyng/roslyn.nvim",
 			opts = {},
+			--commit = "0d3a6c1629f819686184651251ba450e576d44d3",
 		},
 
 		{
@@ -402,17 +442,24 @@ require("lazy").setup({
 						--map("", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
 
 						-- Fuzzy find all the symbols in your current document.
-						map("gds", telescope.lsp_document_symbols, "Open Document Symbols")
+						map("gDs", telescope.lsp_document_symbols, "Open Document Symbols")
 						-- Fuzzy find all the symbols in your current workspace.
 						map("gws", telescope.lsp_dynamic_workspace_symbols, "Open Workspace Symbols")
 						-- Jump to the type of the word under your cursor.
 						map("gtd", telescope.lsp_type_definitions, "[G]oto [T]ype Definition")
 					end,
 				})
+				vim.keymap.del("n", "grn")
+				vim.keymap.del("n", "gra")
+				vim.keymap.del("n", "grr")
+				vim.keymap.del("n", "gri")
+				vim.keymap.del("n", "grt")
+				vim.keymap.del("x", "gra")
+
 				vim.diagnostic.config({
 					severity_sort = true,
 					float = { border = "rounded", source = "if_many" },
-					underline = { severity = vim.diagnostic.severity.ERROR },
+					underline = true,
 					signs = vim.g.have_nerd_font and {
 						text = {
 							[vim.diagnostic.severity.ERROR] = "󰅚 ",
@@ -422,6 +469,7 @@ require("lazy").setup({
 						},
 					} or {},
 					virtual_text = {
+						current_line = true,
 						source = "if_many",
 						spacing = 2,
 						format = function(diagnostic)

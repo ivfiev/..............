@@ -1,7 +1,7 @@
 #!/bin/sh
 
 dotnet \
-  ~/Downloads/Microsoft.CodeAnalysis.LanguageServer.linux-x64.5.0.0-2.25429.8/content/LanguageServer/linux-x64/Microsoft.CodeAnalysis.LanguageServer.dll \
+  /home/fi/dev/roslyn/artifacts/bin/Microsoft.CodeAnalysis.LanguageServer/Release/net9.0/Microsoft.CodeAnalysis.LanguageServer.dll \
 	'--logLevel=Error' \
 	'--extensionLogDirectory=/tmp/roslyn' \
 	--stdio

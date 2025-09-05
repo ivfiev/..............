@@ -39,5 +39,5 @@ alias ls='ls --color=auto'
 alias grep='grep --color=auto'
 alias codium='/usr/bin/codium --enable-features=UseOzonePlatform,WaylandWindowDecorations --ozone-platform=wayland'
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
-export DOTNET_ROOT=$HOME/dothate/dotnet-sdk-9.0.300-linux-x64
-export PATH=$PATH:$HOME/dothate/dotnet-sdk-9.0.300-linux-x64
+export DOTNET_ROOT=$HOME/dothate/dotnet-sdk-10.0.100-p7-linux-x64
+export PATH=$PATH:$HOME/dothate/dotnet-sdk-10.0.100-p7-linux-x64

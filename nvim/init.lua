@@ -316,7 +316,7 @@ require("lazy").setup({
 							["<C-l>"] = "open",
 							["t"] = false,
 							["f"] = false,
-							["m"] = false,
+							["m"] = false, --flash
 							["M"] = "move",
 						},
 					},
@@ -433,36 +433,7 @@ require("lazy").setup({
 
 		{
 			"seblyng/roslyn.nvim",
-			config = function()
-				vim.lsp.config("roslyn", {
-					cmd = {
-						"dotnet",
-						"/home/fi/dev/roslyn/artifacts/bin/Microsoft.CodeAnalysis.LanguageServer/Release/net9.0/Microsoft.CodeAnalysis.LanguageServer.dll",
-						"--logLevel=Error",
-						"--extensionLogDirectory=/tmp/roslyn",
-						"--stdio",
-					},
-					settings = {
-						["csharp|background_analysis"] = {
-							dotnet_analyzer_diagnostics_scope = "openFiles",
-							dotnet_compiler_diagnostics_scope = "openFiles",
-						},
-						["csharp|symbol_search"] = {
-							dotnet_search_reference_assemblies = true,
-						},
-						["csharp|completion"] = {
-							dotnet_show_name_completion_suggestions = true,
-							dotnet_show_completion_items_from_unimported_namespaces = true,
-							dotnet_provide_regex_completions = true,
-						},
-						["csharp|code_lens"] = {
-							dotnet_enable_references_code_lens = false,
-						},
-					},
-				})
-				vim.lsp.enable("roslyn")
-			end,
-			--commit = "0d3a6c1629f819686184651251ba450e576d44d3",
+			opts = {},
 		},
 
 		{
@@ -494,10 +465,8 @@ require("lazy").setup({
 
 						map("gh", vim.lsp.buf.hover, "[H]oover", { "n" })
 
-						local inlay_hints = true
 						map("gIH", function()
-							vim.lsp.inlay_hint.enable(inlay_hints)
-							inlay_hints = not inlay_hints
+							vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
 						end, "n")
 
 						--map("[e", vim.diagnostic.goto_prev())     check out trouble.nvim
@@ -522,14 +491,14 @@ require("lazy").setup({
 					severity_sort = true,
 					float = { border = "rounded", source = "if_many" },
 					underline = true,
-					signs = vim.g.have_nerd_font and {
+					signs = {
 						text = {
 							[vim.diagnostic.severity.ERROR] = "󰅚 ",
 							[vim.diagnostic.severity.WARN] = "󰀪 ",
 							[vim.diagnostic.severity.INFO] = "󰋽 ",
 							[vim.diagnostic.severity.HINT] = "󰌶 ",
 						},
-					} or {},
+					},
 					virtual_text = {
 						current_line = true,
 						source = "if_many",
@@ -548,45 +517,55 @@ require("lazy").setup({
 
 				local capabilities = require("blink.cmp").get_lsp_capabilities()
 
-				local servers = {
-					clangd = {},
-					gopls = {},
-					pyright = {},
-					-- `:help lspconfig-all`
-					lua_ls = {
-						-- cmd = { ... },
-						-- filetypes = { ... },
-						-- capabilities = {},
-						settings = {
-							Lua = {
-								completion = {
-									callSnippet = "Replace",
-								},
-								-- diagnostics = { disable = { 'missing-fields' } },
+				vim.lsp.config("clangd", { capabilities = capabilities })
+				vim.lsp.config("pyright", { capabilities = capabilities })
+				vim.lsp.config("gopls", {
+					capabilities = capabilities,
+					settings = {
+						gopls = {
+							hints = {
+								assignVariableTypes = true,
+								compositeLiteralFields = true,
+								compositeLiteralTypes = true,
+								constantValues = true,
+								functionTypeParameters = true,
+								parameterNames = true,
+								rangeVariableTypes = true,
 							},
 						},
 					},
-				}
-
-				--    :Mason
-				local ensure_installed = vim.tbl_keys(servers or {})
-				vim.list_extend(ensure_installed, {
-					"stylua", -- Used to format Lua code
 				})
-				require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
-
-				require("mason-lspconfig").setup({
-					ensure_installed = {},
-					automatic_installation = false,
-					handlers = {
-						function(server_name)
-							local server = servers[server_name] or {}
-							server.capabilities =
-								vim.tbl_deep_extend("force", {}, capabilities, server.capabilities or {})
-							require("lspconfig")[server_name].setup(server)
-						end,
+				vim.lsp.config("roslyn", {
+					capabilities = capabilities,
+					cmd = {
+						"dotnet",
+						"/home/fi/dev/roslyn/artifacts/bin/Microsoft.CodeAnalysis.LanguageServer/Release/net9.0/Microsoft.CodeAnalysis.LanguageServer.dll",
+						"--logLevel=Error",
+						"--extensionLogDirectory=/tmp/roslyn",
+						"--stdio",
+					},
+					settings = {
+						["csharp|background_analysis"] = {
+							dotnet_analyzer_diagnostics_scope = "openFiles",
+							dotnet_compiler_diagnostics_scope = "openFiles",
+						},
+						["csharp|symbol_search"] = {
+							dotnet_search_reference_assemblies = true,
+						},
+						["csharp|completion"] = {
+							dotnet_show_name_completion_suggestions = true,
+							dotnet_show_completion_items_from_unimported_namespaces = true,
+							dotnet_provide_regex_completions = true,
+						},
+						["csharp|code_lens"] = {
+							dotnet_enable_references_code_lens = false,
+						},
 					},
 				})
+
+				-- :Mason
+				-- require("mason-tool-installer").setup({ ensure_installed = { ... }})
+				require("mason-lspconfig").setup({})
 			end,
 		},
 

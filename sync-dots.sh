@@ -8,8 +8,6 @@ cat /etc/systemd/system/wpa_supplicant.service.d/log.conf >$REPO/etc/systemd/sys
 cat /etc/systemd/system/amdgpu-low.service >$REPO/etc/systemd/system/amdgpu-low.service
 cat ~/.config/hypr/hyprland.conf >$REPO/hypr/hyprland.conf
 cat ~/.config/kitty/kitty.conf >$REPO/kitty/kitty.conf
-cat ~/.config/VSCodium/User/keybindings.json >$REPO/vscopium/keybindings.json
-cat ~/.config/VSCodium/User/settings.json >$REPO/vscopium/settings.json
 cat ~/.config/waybar/config.jsonc >$REPO/waybar/config.jsonc
 cat ~/.config/waybar/style.css >$REPO/waybar/style.css
 cat ~/.config/wlogout/layout >$REPO/wlogout/layout

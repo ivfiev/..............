@@ -534,6 +534,11 @@ require("lazy").setup({
 							},
 						},
 					},
+					on_attach = function(client, _)
+						-- disable gopls formatting
+						client.server_capabilities.documentFormattingProvider = false
+						client.server_capabilities.documentRangeFormattingProvider = false
+					end,
 				})
 				vim.lsp.config("roslyn", {
 					capabilities = capabilities,
@@ -575,7 +580,7 @@ require("lazy").setup({
 			cmd = { "ConformInfo" },
 			keys = {
 				{
-					"<leader>f",
+					"<leader>fmt",
 					function()
 						require("conform").format({ async = true, lsp_format = "fallback" })
 					end,
@@ -598,6 +603,7 @@ require("lazy").setup({
 				end,
 				formatters_by_ft = {
 					lua = { "stylua" },
+					go = { "goimports", "gofumpt" },
 				},
 			},
 		},

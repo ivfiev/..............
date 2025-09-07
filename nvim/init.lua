@@ -1,6 +1,7 @@
 vim.g.mapleader = ";"
 vim.g.maplocalleader = " "
 vim.g.have_nerd_font = true
+vim.keymap.set({ "n", "x" }, ";;", ";")
 
 vim.opt.number = true
 vim.opt.relativenumber = false
@@ -10,7 +11,6 @@ vim.opt.foldmethod = "indent"
 vim.opt.foldlevel = 99
 vim.opt.winborder = "single"
 
--- spaces
 vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
 vim.opt.expandtab = true
@@ -43,7 +43,6 @@ vim.opt.signcolumn = "yes"
 vim.opt.showmode = false
 vim.opt.mouse = "a"
 
--- search
 vim.opt.hlsearch = false
 vim.ignorecase = true
 vim.smartcase = true
@@ -67,6 +66,10 @@ vim.keymap.set("n", "ZZ", "<Cmd>wqa<CR>")
 vim.keymap.set({ "x" }, ">", ">gv")
 vim.keymap.set({ "x" }, "<", "<gv")
 
+vim.keymap.set("n", "<leader>bp", ":bprev<CR>", { silent = true })
+vim.keymap.set("n", "<leader>bn", ":bnext<CR>", { silent = true })
+vim.keymap.set("n", "<leader>bd", ":bd<CR>", { silent = true })
+
 vim.keymap.set({ "n", "i", "x" }, "<C-s>", "<Cmd>:w<CR><Esc>")
 vim.keymap.set({ "n", "i", "x" }, "<C-a>", "<Esc>ggVG")
 vim.keymap.set("i", "<C-v>", "<Esc>Pa", { remap = true })
@@ -84,11 +87,26 @@ vim.keymap.set({ "n", "i" }, "<X2Mouse>", "<C-i>")
 vim.api.nvim_create_autocmd("TextYankPost", {
 	callback = function()
 		vim.highlight.on_yank({
-			higroup = "IncSearch", -- highlight group to use
-			timeout = 150, -- highlight duration in ms
+			higroup = "IncSearch",
+			timeout = 150,
 		})
 	end,
 })
+
+vim.keymap.set("n", "*", function()
+	vim.opt.hlsearch = not vim.opt.hlsearch:get()
+end)
+vim.keymap.set("x", "*", function()
+	vim.cmd("normal! y") -- v -> "
+	local s = vim.fn.getreg('"')
+	if s == nil or s == "" then
+		return
+	end
+	s = s:gsub("[\r\n]+$", "") -- drop trailine whitespace
+	local pat = "\\V\\C" .. vim.fn.escape(s, "\\/") -- v-nomagic + case-sensitive
+	vim.opt.hlsearch = true
+	vim.fn.setreg("/", pat)
+end, { noremap = true, silent = true })
 
 vim.lsp.set_log_level("ERROR")
 
@@ -112,13 +130,6 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 	end
 end
 vim.opt.rtp:prepend(lazypath)
-
--- is this needed anymore with branch=master?
-local original = vim.lsp.util.make_position_params
-vim.lsp.util.make_position_params = function(pos, encoding, ...)
-	encoding = encoding or "utf-16" -- explicitly set
-	return original(pos, encoding, ...)
-end
 
 -- setup all the plugin shite
 require("lazy").setup({
@@ -171,11 +182,21 @@ require("lazy").setup({
 		{
 			"nvim-telescope/telescope.nvim",
 			branch = "master",
-			dependencies = { "nvim-lua/plenary.nvim" },
+			dependencies = {
+				"nvim-lua/plenary.nvim",
+				"nvim-telescope/telescope-ui-select.nvim",
+			},
 			config = function()
 				local builtin = require("telescope.builtin")
-				require("telescope").setup({
+				local actions = require("telescope.actions")
+				local telescope = require("telescope")
+				telescope.setup({
 					defaults = {
+						mappings = {
+							i = {
+								["<Esc>"] = actions.close,
+							},
+						},
 						path_display = { "truncate" },
 						layout_strategy = "flex",
 						layout_config = {
@@ -186,10 +207,29 @@ require("lazy").setup({
 						sorting_strategy = "ascending",
 						winblend = 0,
 					},
+					extensions = {
+						["ui-select"] = {
+							require("telescope.themes").get_cursor({
+								winblend = 10,
+								previewer = false,
+								layout_config = {
+									width = 0.5,
+									height = 0.4,
+									prompt_position = "top",
+								},
+								border = true,
+							}),
+						},
+					},
 				})
+				telescope.load_extension("ui-select")
+
 				vim.keymap.set("n", "<leader>ff", builtin.find_files)
 				vim.keymap.set("n", "<leader>fg", builtin.live_grep)
-				vim.keymap.set("n", "<leader>fb", builtin.buffers)
+				-- vim.keymap.set("n", "<leader>fbf", builtin.buffers)
+				vim.keymap.set("n", "<leader>fb", function()
+					builtin.live_grep({ grep_open_files = true })
+				end)
 				vim.keymap.set("n", "<leader>fr", builtin.resume)
 			end,
 		},
@@ -276,6 +316,8 @@ require("lazy").setup({
 							["<C-l>"] = "open",
 							["t"] = false,
 							["f"] = false,
+							["m"] = false,
+							["M"] = "move",
 						},
 					},
 					filesystem = {
@@ -331,7 +373,7 @@ require("lazy").setup({
 			},
 			keys = {
 				{
-					"<leader>j",
+					"m",
 					mode = { "n", "x" },
 					function()
 						require("flash").remote()
@@ -353,27 +395,17 @@ require("lazy").setup({
 					desc = "Open Snipe buffer menu",
 				},
 			},
-			config = function()
-				local snipe = require("snipe")
-				snipe.setup({
-					ui = {
-						position = "center",
-						persist_tags = true,
-						preselect_current = true,
-					},
-					hints = {
-						dictionary = "abcdefghilmnopqrstuvwxyz",
-					},
-					sort = "last",
-				})
-				snipe.ui_select_menu = require("snipe.menu"):new({ position = "center" })
-				snipe.ui_select_menu:add_new_buffer_callback(function(m)
-					vim.keymap.set("n", "<esc>", function()
-						m:close()
-					end, { nowait = true, buffer = m.buf })
-				end)
-				vim.ui.select = snipe.ui_select
-			end,
+			opts = {
+				ui = {
+					position = "center",
+					persist_tags = false,
+					preselect_current = true,
+				},
+				hints = {
+					dictionary = "abcdefghilmnopqrstuvwxyz",
+				},
+				--sort = "last",
+			},
 		},
 
 		{
@@ -385,7 +417,7 @@ require("lazy").setup({
 				}
 				local hooks = require("ibl.hooks")
 				hooks.register(hooks.type.HIGHLIGHT_SETUP, function()
-					vim.api.nvim_set_hl(0, "c3", { fg = "#003333" })
+					vim.api.nvim_set_hl(0, "c3", { fg = "#004444" })
 				end)
 				require("ibl").setup({
 					indent = {
@@ -401,27 +433,50 @@ require("lazy").setup({
 
 		{
 			"seblyng/roslyn.nvim",
-			opts = {},
+			config = function()
+				vim.lsp.config("roslyn", {
+					cmd = {
+						"dotnet",
+						"/home/fi/dev/roslyn/artifacts/bin/Microsoft.CodeAnalysis.LanguageServer/Release/net9.0/Microsoft.CodeAnalysis.LanguageServer.dll",
+						"--logLevel=Error",
+						"--extensionLogDirectory=/tmp/roslyn",
+						"--stdio",
+					},
+					settings = {
+						["csharp|background_analysis"] = {
+							dotnet_analyzer_diagnostics_scope = "openFiles",
+							dotnet_compiler_diagnostics_scope = "openFiles",
+						},
+						["csharp|symbol_search"] = {
+							dotnet_search_reference_assemblies = true,
+						},
+						["csharp|completion"] = {
+							dotnet_show_name_completion_suggestions = true,
+							dotnet_show_completion_items_from_unimported_namespaces = true,
+							dotnet_provide_regex_completions = true,
+						},
+						["csharp|code_lens"] = {
+							dotnet_enable_references_code_lens = false,
+						},
+					},
+				})
+				vim.lsp.enable("roslyn")
+			end,
 			--commit = "0d3a6c1629f819686184651251ba450e576d44d3",
 		},
 
 		{
 			"neovim/nvim-lspconfig",
 			dependencies = {
-				-- Automatically install LSPs and related tools to stdpath for Neovim
-				-- Mason must be loaded before its dependents so we need to set it up here.
-				-- NOTE: `opts = {}` is the same as calling `require('mason').setup({})`
 				{ "mason-org/mason.nvim", opts = {} },
 				"mason-org/mason-lspconfig.nvim",
 				"WhoIsSethDaniel/mason-tool-installer.nvim",
-				-- Useful status updates for LSP.
 				{ "j-hui/fidget.nvim", opts = {} },
-				-- Allows extra capabilities provided by blink.cmp
 				"Saghen/blink.cmp",
 			},
 			config = function()
 				vim.api.nvim_create_autocmd("LspAttach", {
-					group = vim.api.nvim_create_augroup("kickstart-lsp-attach", { clear = true }),
+					--group = vim.api.nvim_create_augroup("kickstart-lsp-attach", { clear = true }),
 					callback = function(event)
 						local map = function(keys, func, desc, mode)
 							mode = mode or "n"
@@ -436,7 +491,14 @@ require("lazy").setup({
 						map("gi", telescope.lsp_implementations, "[G]oto [I]mplementation")
 						map("gd", telescope.lsp_definitions, "[G]oto [D]efinition")
 						map("ge", telescope.diagnostics, "[G]oto [E]rror")
+
 						map("gh", vim.lsp.buf.hover, "[H]oover", { "n" })
+
+						local inlay_hints = true
+						map("gIH", function()
+							vim.lsp.inlay_hint.enable(inlay_hints)
+							inlay_hints = not inlay_hints
+						end, "n")
 
 						--map("[e", vim.diagnostic.goto_prev())     check out trouble.nvim
 						--map("", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
@@ -514,7 +576,7 @@ require("lazy").setup({
 				require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
 
 				require("mason-lspconfig").setup({
-					ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
+					ensure_installed = {},
 					automatic_installation = false,
 					handlers = {
 						function(server_name)

@@ -1,7 +1,0 @@
-#!/bin/sh
-
-dotnet \
-  /home/fi/dev/roslyn/artifacts/bin/Microsoft.CodeAnalysis.LanguageServer/Release/net9.0/Microsoft.CodeAnalysis.LanguageServer.dll \
-	'--logLevel=Error' \
-	'--extensionLogDirectory=/tmp/roslyn' \
-	--stdio

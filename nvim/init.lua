@@ -93,6 +93,15 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	end,
 })
 
+vim.api.nvim_create_autocmd("VimEnter", {
+	callback = function()
+		local arg = vim.fn.argv(0)
+		if arg ~= "" and vim.fn.isdirectory(arg) == 1 then
+			vim.cmd("cd " .. arg)
+		end
+	end,
+})
+
 vim.keymap.set("n", "*", function()
 	vim.opt.hlsearch = not vim.opt.hlsearch:get()
 end)
@@ -181,6 +190,7 @@ require("lazy").setup({
 
 		{
 			"nvim-telescope/telescope.nvim",
+			event = "VeryLazy",
 			branch = "master",
 			dependencies = {
 				"nvim-lua/plenary.nvim",
@@ -206,6 +216,17 @@ require("lazy").setup({
 						},
 						sorting_strategy = "ascending",
 						winblend = 0,
+					},
+					pickers = {
+						find_files = {
+							hidden = true,
+							find_command = { "fd", "--type", "f", "--hidden", "--exclude", ".git" },
+						},
+						live_grep = {
+							additional_args = function(_)
+								return { "--hidden", "--glob", "!.git/" }
+							end,
+						},
 					},
 					extensions = {
 						["ui-select"] = {
@@ -329,6 +350,13 @@ require("lazy").setup({
 							leave_dirs_open = true,
 						},
 						hijack_netrw_behavior = "open_default", -- replace netrw
+						filtered_items = {
+							hide_dotfiles = false,
+							hide_gitignored = false,
+							hide_by_name = {
+								".git",
+							},
+						},
 					},
 				})
 				vim.keymap.set({ "n" }, "<leader>fs", "<Cmd>Neotree filesystem reveal<CR>", { silent = true })
@@ -347,8 +375,14 @@ require("lazy").setup({
 
 		{
 			"windwp/nvim-autopairs",
-			event = "InsertEnter",
+			event = "VeryLazy",
 			config = true,
+			opts = {},
+		},
+
+		{
+			"numToStr/Comment.nvim",
+			event = "VeryLazy",
 			opts = {},
 		},
 
@@ -385,7 +419,7 @@ require("lazy").setup({
 
 		{
 			"leath-dub/snipe.nvim",
-			lazy = false,
+			event = "VeryLazy",
 			keys = {
 				{
 					"<leader>s",
@@ -434,6 +468,7 @@ require("lazy").setup({
 		{
 			"seblyng/roslyn.nvim",
 			opts = {},
+			ft = { "cs" }, -- mb switch for work
 		},
 
 		{
@@ -576,7 +611,7 @@ require("lazy").setup({
 
 		{ -- Autoformat
 			"stevearc/conform.nvim",
-			event = { "BufWritePre" },
+			event = "VeryLazy",
 			cmd = { "ConformInfo" },
 			keys = {
 				{
@@ -619,7 +654,7 @@ require("lazy").setup({
 			--- @type blink.cmp.Config
 			opts = {
 				keymap = {
-					["<CR>"] = { "select_and_accept", "fallback" },
+					["<CR>"] = { "accept", "fallback" },
 					["<Tab>"] = { "accept", "fallback" },
 					-- :h ins-completion :h blink-cmp-config-keymap
 					preset = "default",
@@ -652,6 +687,14 @@ require("lazy").setup({
 
 				-- Shows a signature help window while you type arguments for a function
 				signature = { enabled = true },
+
+				cmdline = {
+					keymap = { preset = "inherit" },
+					completion = {
+						menu = { auto_show = true },
+						list = { selection = { preselect = false, auto_insert = true } },
+					},
+				},
 			},
 		},
 	},

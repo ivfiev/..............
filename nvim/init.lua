@@ -2,6 +2,7 @@ vim.g.mapleader = ";"
 vim.g.maplocalleader = " "
 vim.g.have_nerd_font = true
 vim.keymap.set({ "n", "x" }, ";;", ";")
+vim.keymap.set("i", "qq", "<Esc>")
 
 vim.opt.number = true
 vim.opt.relativenumber = false
@@ -20,14 +21,6 @@ vim.api.nvim_create_autocmd("FileType", {
 	callback = function()
 		vim.opt_local.tabstop = 4
 		vim.opt_local.shiftwidth = 4
-		vim.opt_local.expandtab = true
-	end,
-})
-vim.api.nvim_create_autocmd("FileType", {
-	pattern = "lua",
-	callback = function()
-		vim.opt_local.tabstop = 2
-		vim.opt_local.shiftwidth = 2
 		vim.opt_local.expandtab = true
 	end,
 })
@@ -200,6 +193,7 @@ require("lazy").setup({
 				local builtin = require("telescope.builtin")
 				local actions = require("telescope.actions")
 				local telescope = require("telescope")
+
 				telescope.setup({
 					defaults = {
 						mappings = {
@@ -246,11 +240,18 @@ require("lazy").setup({
 				telescope.load_extension("ui-select")
 
 				vim.keymap.set("n", "<leader>ff", builtin.find_files)
-				vim.keymap.set("n", "<leader>fg", builtin.live_grep)
+				vim.keymap.set("n", "<leader>fg", builtin.live_grep) -- regex
+				vim.keymap.set("x", "<leader>fg", function()
+					vim.cmd('normal! "zy')
+					local text = vim.fn.getreg("z")
+					text = text:gsub("[\r\n]+$", "")
+					builtin.grep_string({ default_text = text }) -- literal str
+				end, { silent = true })
 				-- vim.keymap.set("n", "<leader>fbf", builtin.buffers)
 				vim.keymap.set("n", "<leader>fb", function()
 					builtin.live_grep({ grep_open_files = true })
 				end)
+				vim.keymap.set("n", "<leader>ft", builtin.lsp_dynamic_workspace_symbols)
 				vim.keymap.set("n", "<leader>fr", builtin.resume)
 			end,
 		},
@@ -553,6 +554,14 @@ require("lazy").setup({
 				local capabilities = require("blink.cmp").get_lsp_capabilities()
 
 				vim.lsp.config("clangd", { capabilities = capabilities })
+				vim.lsp.config("rust_analyzer", {
+					capabilities = capabilities,
+					settings = {
+						["rust-analyzer"] = {
+							cargo = { all_features = true },
+						},
+					},
+				})
 				vim.lsp.config("pyright", { capabilities = capabilities })
 				vim.lsp.config("gopls", {
 					capabilities = capabilities,
@@ -639,6 +648,11 @@ require("lazy").setup({
 				formatters_by_ft = {
 					lua = { "stylua" },
 					go = { "goimports", "gofumpt" },
+				},
+				formatters = {
+					gofumpt = {
+						args = { "-extra" },
+					},
 				},
 			},
 		},

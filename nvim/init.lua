@@ -473,6 +473,22 @@ require("lazy").setup({
 		},
 
 		{
+			"kdheepak/lazygit.nvim",
+			lazy = true,
+			cmd = {
+				"LazyGit",
+			},
+			keys = {
+				{ "<leader>lg", "<cmd>LazyGit<cr>", desc = "LazyGit" },
+			},
+			config = function()
+				vim.g.lazygit_floating_window_scaling_factor = 0.99
+				vim.g.lazygit_floating_window_use_plenary = 0
+				vim.g.lazygit_floating_window_border_chars = { " ", " ", " ", " ", " ", " ", " ", " " }
+			end,
+		},
+
+		{
 			"neovim/nvim-lspconfig",
 			dependencies = {
 				{ "mason-org/mason.nvim", opts = {} },

@@ -3,6 +3,7 @@ vim.g.maplocalleader = " "
 vim.g.have_nerd_font = true
 vim.keymap.set({ "n", "x" }, ";;", ";")
 vim.keymap.set("i", "qq", "<Esc>")
+vim.keymap.set("n", "M", "m")
 
 vim.opt.number = true
 vim.opt.relativenumber = false
@@ -72,7 +73,6 @@ end)
 vim.keymap.set({ "x" }, "p", '"_dp')
 vim.keymap.set({ "x" }, "P", '"_dP')
 
-vim.keymap.set({ "n", "x" }, "<Tab>", "<C-w>w")
 vim.keymap.set({ "n", "i", "x" }, "<C-0>", "<C-v>")
 vim.keymap.set({ "n", "i" }, "<X1Mouse>", "<C-o>")
 vim.keymap.set({ "n", "i" }, "<X2Mouse>", "<C-i>")
@@ -247,12 +247,14 @@ require("lazy").setup({
 					text = text:gsub("[\r\n]+$", "")
 					builtin.grep_string({ default_text = text }) -- literal str
 				end, { silent = true })
-				-- vim.keymap.set("n", "<leader>fbf", builtin.buffers)
-				vim.keymap.set("n", "<leader>fb", function()
-					builtin.live_grep({ grep_open_files = true })
-				end)
 				vim.keymap.set("n", "<leader>ft", builtin.lsp_dynamic_workspace_symbols)
 				vim.keymap.set("n", "<leader>fr", builtin.resume)
+				vim.keymap.set("n", "<leader>bg", function()
+					builtin.live_grep({ grep_open_files = true, prompt_title = "Live Grep (Buffers)" })
+				end)
+				vim.keymap.set("n", "<leader>bf", function()
+					builtin.buffers()
+				end)
 			end,
 		},
 
@@ -276,10 +278,14 @@ require("lazy").setup({
 			dependencies = { "MunifTanjim/nui.nvim" },
 			config = function()
 				require("noice").setup({
+					presets = {
+						lsp_doc_border = true,
+					},
 					cmdline = { enabled = true },
 					lsp = {
 						progress = { enabled = false },
 						hover = { enabled = false },
+						signature = { enabled = false },
 					},
 					messages = {
 						enabled = true,
@@ -291,7 +297,7 @@ require("lazy").setup({
 					},
 					views = {
 						mini = {
-							timeout = 5000,
+							timeout = 10000,
 						},
 					},
 				})
@@ -489,6 +495,23 @@ require("lazy").setup({
 		},
 
 		{
+			"lewis6991/hover.nvim",
+			event = "VeryLazy",
+			config = function()
+				require("hover").config({
+					providers = {
+						"hover.providers.lsp",
+						"hover.providers.diagnostic",
+					},
+					mouse_providers = {},
+				})
+				vim.keymap.set("n", "gh", function()
+					require("hover").open()
+				end, { desc = "hover.nvim (open)" })
+			end,
+		},
+
+		{
 			"neovim/nvim-lspconfig",
 			dependencies = {
 				{ "mason-org/mason.nvim", opts = {} },
@@ -514,8 +537,6 @@ require("lazy").setup({
 						map("gi", telescope.lsp_implementations, "[G]oto [I]mplementation")
 						map("gd", telescope.lsp_definitions, "[G]oto [D]efinition")
 						map("ge", telescope.diagnostics, "[G]oto [E]rror")
-
-						map("gh", vim.lsp.buf.hover, "[H]oover", { "n" })
 
 						map("gIH", function()
 							vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
@@ -637,12 +658,12 @@ require("lazy").setup({
 		{ -- Autoformat
 			"stevearc/conform.nvim",
 			event = "VeryLazy",
-			cmd = { "ConformInfo" },
 			keys = {
 				{
-					"<leader>fmt",
+					"gq",
 					function()
 						require("conform").format({ async = true, lsp_format = "fallback" })
+						send_key("<Esc>", "n")
 					end,
 					mode = "",
 					desc = "[F]ormat buffer",
@@ -651,7 +672,7 @@ require("lazy").setup({
 			opts = {
 				notify_on_error = false,
 				format_on_save = function(bufnr)
-					local disable_filetypes = { c = true, cpp = true }
+					local disable_filetypes = { c = true, cpp = true } --, cs = true } .editorconfig
 					if disable_filetypes[vim.bo[bufnr].filetype] then
 						return nil
 					else
@@ -695,7 +716,7 @@ require("lazy").setup({
 				completion = {
 					-- `<c-space>` to show the documentation.
 					-- `auto_show = true` to show the documentation after a delay.
-					documentation = { auto_show = true, auto_show_delay_ms = 2000 },
+					documentation = { auto_show = true, auto_show_delay_ms = 100 },
 					list = {
 						selection = {
 							preselect = false,
@@ -728,6 +749,7 @@ require("lazy").setup({
 			},
 		},
 	},
+
 	install = { colorscheme = { "habamax" } },
 	-- automatically check for plugin updates
 	checker = { enabled = true },

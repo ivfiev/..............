@@ -3,7 +3,6 @@ vim.g.maplocalleader = " "
 vim.g.have_nerd_font = true
 vim.keymap.set({ "n", "x" }, ";;", ";")
 vim.keymap.set("i", "qq", "<Esc>")
-vim.keymap.set("n", "M", "m")
 
 vim.opt.number = true
 vim.opt.relativenumber = false
@@ -86,15 +85,35 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	end,
 })
 
+-- marks & shadas
 vim.api.nvim_create_autocmd("VimEnter", {
 	callback = function()
 		local arg = vim.fn.argv(0)
 		if arg ~= "" and vim.fn.isdirectory(arg) == 1 then
+			-- force correct cwd if directory passed in
 			vim.cmd("cd " .. arg)
+			-- per-project shadas
+			local workspace_path = vim.fn.getcwd()
+			local cache_dir = vim.fn.stdpath("state")
+			local unique_id = vim.fn.fnamemodify(workspace_path, ":t") .. "_" .. vim.fn.sha256(workspace_path):sub(1, 8)
+			local shadafile = cache_dir .. "/shada/" .. unique_id .. ".shada"
+			vim.opt.shadafile = shadafile
+			pcall(vim.cmd.rshada)
 		end
 	end,
 })
 
+vim.keymap.set("n", "M", function()
+	local mark = vim.fn.getcharstr()
+	vim.cmd("normal! m" .. string.upper(mark))
+end)
+vim.keymap.set("n", "'", function()
+	local mark = vim.fn.getcharstr()
+	vim.cmd("normal! '" .. string.upper(mark))
+	vim.cmd("normal! g'\"")
+end)
+
+-- highlighting
 vim.keymap.set("n", "*", function()
 	vim.opt.hlsearch = not vim.opt.hlsearch:get()
 end)
@@ -109,6 +128,18 @@ vim.keymap.set("x", "*", function()
 	vim.opt.hlsearch = true
 	vim.fn.setreg("/", pat)
 end, { noremap = true, silent = true })
+
+-- terminal
+vim.keymap.set("n", "<leader>t", ":terminal<CR>", { silent = true })
+vim.keymap.set("t", "<Esc>", [[<C-\><C-n>:b#<Cr>]], { silent = true })
+vim.api.nvim_create_autocmd({ "TermOpen", "BufEnter" }, {
+	pattern = "*",
+	callback = function()
+		if vim.opt.buftype:get() == "terminal" then
+			vim.cmd("startinsert")
+		end
+	end,
+})
 
 vim.lsp.set_log_level("ERROR")
 
@@ -135,6 +166,9 @@ vim.opt.rtp:prepend(lazypath)
 
 -- setup all the plugin shite
 require("lazy").setup({
+
+	ui = { border = "rounded" },
+
 	spec = {
 
 		{
@@ -142,6 +176,36 @@ require("lazy").setup({
 			lazy = false,
 			priority = 1000,
 			config = function()
+				BG = "#070407"
+				vim.g.BG = BG
+				require("tokyonight").setup({
+					on_colors = function(c)
+						c.bg = BG
+						c.bg_dark1 = BG
+						c.bg_dark = BG
+						c.bg_float = BG
+						c.bg_sidebar = BG
+						c.bg_popup = BG
+						c.bg_highlight = BG
+					end,
+					on_highlights = function(hl, c)
+						hl.CursorLine = { bg = "#001122" }
+						hl.Visual = { bg = "#661166" }
+						hl.Search = { bg = hl.Visual.bg }
+						hl.IncSearch = { bg = hl.Visual.bg }
+						hl.DiagnosticVirtualTextError = { bg = "NONE", fg = hl.DiagnosticVirtualTextError.fg }
+						hl.DiagnosticVirtualTextWarn = { bg = "NONE", fg = hl.DiagnosticVirtualTextWarn.fg }
+						hl.DiagnosticVirtualTextInfo = { bg = "NONE", fg = hl.DiagnosticVirtualTextInfo.fg }
+						hl.DiagnosticVirtualTextHint = { bg = "NONE", fg = hl.DiagnosticVirtualTextHint.fg }
+						hl.LspInlayHint = { bg = "NONE", fg = hl.LspInlayHint.fg }
+						hl.BlinkCmpMenuSelection = { bg = "#002244" }
+						hl.NeoTreeCursorLine = { bg = "#002244" }
+						hl.TelescopeSelection = { bg = "#002244" }
+						hl.FlashCurrent = { bg = "#006666", fg = "#111111", bold = false }
+						hl.FlashMatch = { bg = "#006666", fg = "#111111", bold = false }
+						hl.FlashLabel = { bg = "#880088", fg = "#FAFAFA", bold = true }
+					end,
+				})
 				vim.cmd([[colorscheme tokyonight-night]])
 			end,
 		},
@@ -262,12 +326,56 @@ require("lazy").setup({
 			"nvim-lualine/lualine.nvim",
 			dependencies = { "nvim-tree/nvim-web-devicons" },
 			config = function()
-				local theme = require("lualine.themes.nightfly")
-				theme.normal.c.bg = "#1a1b26"
-				theme.inactive.c.bg = "#1a1b26"
+				local theme = require("lualine.themes.tokyonight")
+				theme.normal.c.bg = vim.g.BG
+				theme.inactive.c.bg = vim.g.BG
+				vim.api.nvim_set_hl(
+					0,
+					"LualineFilenameUnderline",
+					{ underline = true, fg = theme.normal.c.fg, bg = theme.normal.c.bg }
+				)
 				require("lualine").setup({
 					options = {
 						theme = theme,
+						section_separators = "",
+						component_separators = "",
+					},
+					sections = {
+						lualine_a = {},
+						lualine_b = {},
+						lualine_c = {},
+						lualine_x = {
+							"diagnostics",
+							"lsp_status",
+							--"encoding",
+							--"fileformat",
+							"progress",
+							"location",
+							"branch",
+							{
+								"filename",
+								path = 1,
+								symbols = { modified = "" },
+								fmt = function(str)
+									if vim.bo.modified then
+										return "%#LualineFilenameUnderline#" .. str:sub(1, -2) .. "%*"
+									else
+										return str
+									end
+								end,
+							},
+							{ "filetype", icon_only = true },
+						},
+						lualine_y = {},
+						lualine_z = {},
+					},
+					inactive_sections = {
+						lualine_a = {},
+						lualine_b = {},
+						lualine_c = {},
+						lualine_x = { "filename" },
+						lualine_y = {},
+						lualine_z = {},
 					},
 				})
 			end,
@@ -408,7 +516,8 @@ require("lazy").setup({
 				},
 				label = {
 					rainbow = {
-						enabled = true,
+						enabled = false,
+						shade = 4,
 					},
 				},
 			},
@@ -458,7 +567,7 @@ require("lazy").setup({
 				}
 				local hooks = require("ibl.hooks")
 				hooks.register(hooks.type.HIGHLIGHT_SETUP, function()
-					vim.api.nvim_set_hl(0, "c3", { fg = "#004444" })
+					vim.api.nvim_set_hl(0, "c3", { fg = "#243648" })
 				end)
 				require("ibl").setup({
 					indent = {
@@ -652,6 +761,7 @@ require("lazy").setup({
 				-- :Mason
 				-- require("mason-tool-installer").setup({ ensure_installed = { ... }})
 				require("mason-lspconfig").setup({})
+				require("mason").setup({ ui = { border = "rounded" } })
 			end,
 		},
 

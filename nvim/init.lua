@@ -42,6 +42,7 @@ vim.smartcase = true
 
 vim.opt.clipboard = "unnamedplus" -- +clipboard
 vim.opt.swapfile = false
+vim.opt.report = 9999
 
 vim.g.netrw_browse_split = 0
 vim.g.netrw_liststyle = 3
@@ -76,10 +77,11 @@ vim.keymap.set({ "n", "i", "x" }, "<C-0>", "<C-v>")
 vim.keymap.set({ "n", "i" }, "<X1Mouse>", "<C-o>")
 vim.keymap.set({ "n", "i" }, "<X2Mouse>", "<C-i>")
 
+vim.api.nvim_set_hl(0, "OnYankHighlight", { bg = "#FF4400" })
 vim.api.nvim_create_autocmd("TextYankPost", {
 	callback = function()
 		vim.highlight.on_yank({
-			higroup = "IncSearch",
+			higroup = "OnYankHighlight",
 			timeout = 150,
 		})
 	end,
@@ -111,6 +113,14 @@ vim.keymap.set("n", "'", function()
 	local mark = vim.fn.getcharstr()
 	vim.cmd("normal! '" .. string.upper(mark))
 	vim.cmd("normal! g'\"")
+end)
+vim.keymap.set("n", "MM", function()
+	local mark = vim.fn.getcharstr()
+	vim.cmd("normal! m" .. string.lower(mark))
+end)
+vim.keymap.set("n", "''", function()
+	local mark = vim.fn.getcharstr()
+	vim.cmd("normal! '" .. string.lower(mark))
 end)
 
 -- highlighting
@@ -319,6 +329,7 @@ require("lazy").setup({
 				vim.keymap.set("n", "<leader>bf", function()
 					builtin.buffers()
 				end)
+				vim.keymap.set("n", "<leader>fm", builtin.marks)
 			end,
 		},
 
@@ -355,7 +366,7 @@ require("lazy").setup({
 							{
 								"filename",
 								path = 1,
-								symbols = { modified = "" },
+								symbols = { modified = "", readonly = "[Read-only]" },
 								fmt = function(str)
 									if vim.bo.modified then
 										return "%#LualineFilenameUnderline#" .. str:sub(1, -2) .. "%*"
@@ -548,13 +559,16 @@ require("lazy").setup({
 			opts = {
 				ui = {
 					position = "center",
-					persist_tags = false,
+					persist_tags = false, -- did he fix it?
 					preselect_current = true,
+					open_win_override = {
+						title = "",
+					},
 				},
 				hints = {
 					dictionary = "abcdefghilmnopqrstuvwxyz",
 				},
-				--sort = "last",
+				sort = "last",
 			},
 		},
 
@@ -780,6 +794,7 @@ require("lazy").setup({
 				},
 			},
 			opts = {
+				async = true,
 				notify_on_error = false,
 				format_on_save = function(bufnr)
 					local disable_filetypes = { c = true, cpp = true } --, cs = true } .editorconfig

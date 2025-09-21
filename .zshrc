@@ -41,3 +41,6 @@ alias codium='/usr/bin/codium --enable-features=UseOzonePlatform,WaylandWindowDe
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 export DOTNET_ROOT=$HOME/dothate/dotnet-sdk-10.0.100-p7-linux-x64
 export PATH=$PATH:$HOME/dothate/dotnet-sdk-10.0.100-p7-linux-x64
+
+export EDITOR=nvim
+alias vim=nvim

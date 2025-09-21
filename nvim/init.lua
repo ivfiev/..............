@@ -357,11 +357,11 @@ require("lazy").setup({
 						lualine_c = {},
 						lualine_x = {
 							"diagnostics",
-							"lsp_status",
+							--"lsp_status",
 							--"encoding",
 							--"fileformat",
-							"progress",
-							"location",
+							--"progress",
+							--"location",
 							"branch",
 							{
 								"filename",

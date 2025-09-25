@@ -141,7 +141,7 @@ end, { noremap = true, silent = true })
 
 -- terminal
 vim.keymap.set("n", "<leader>t", ":terminal<CR>", { silent = true })
-vim.keymap.set("t", "<Esc>", [[<C-\><C-n>:b#<Cr>]], { silent = true })
+vim.keymap.set("t", "<C-o>", [[<C-\><C-n>:b#<Cr>]], { silent = true })
 vim.api.nvim_create_autocmd({ "TermOpen", "BufEnter" }, {
 	pattern = "*",
 	callback = function()
@@ -150,6 +150,32 @@ vim.api.nvim_create_autocmd({ "TermOpen", "BufEnter" }, {
 		end
 	end,
 })
+
+-- git blame
+vim.keymap.set("n", "<leader>gb", function()
+	local file_path = vim.fn.expand("%:p")
+	local file_name = vim.fn.expand("%:t")
+	local line_num = vim.fn.line(".")
+	local cmd = { "git", "blame", "--line-porcelain", "-L", line_num .. "," .. line_num, "--", file_path }
+	local result = vim.fn.systemlist(cmd)
+	if vim.v.shell_error ~= 0 or #result == 0 then
+		vim.notify("No one to blame...", vim.log.levels.INFO)
+		return
+	end
+	local author, time, summary
+	for _, line in ipairs(result) do
+		if line:match("^author ") then
+			author = line:gsub("^author ", "")
+		elseif line:match("^author%-time ") then
+			time = os.date("%Y-%m-%d", tonumber(line:gsub("^author%-time ", ""), 10))
+		elseif line:match("^summary ") then
+			summary = line:gsub("^summary ", "")
+		end
+	end
+	local msg =
+		string.format("%s:%s - [%s] @ [%s] -> [%s]  ", file_name, line_num, author or "?", time or "?", summary or "?")
+	vim.notify(msg, vim.log.levels.INFO, { title = "blame " })
+end)
 
 vim.lsp.set_log_level("ERROR")
 
@@ -599,22 +625,6 @@ require("lazy").setup({
 			"seblyng/roslyn.nvim",
 			opts = {},
 			ft = { "cs" }, -- mb switch for work
-		},
-
-		{
-			"kdheepak/lazygit.nvim",
-			lazy = true,
-			cmd = {
-				"LazyGit",
-			},
-			keys = {
-				{ "<leader>lg", "<cmd>LazyGit<cr>", desc = "LazyGit" },
-			},
-			config = function()
-				vim.g.lazygit_floating_window_scaling_factor = 0.99
-				vim.g.lazygit_floating_window_use_plenary = 0
-				vim.g.lazygit_floating_window_border_chars = { " ", " ", " ", " ", " ", " ", " ", " " }
-			end,
 		},
 
 		{

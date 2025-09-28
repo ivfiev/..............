@@ -155,7 +155,7 @@ end, { noremap = true, silent = true })
 
 -- terminal
 vim.keymap.set("n", "<leader>t", ":terminal<CR>", { silent = true })
-vim.keymap.set("t", "<S-Esc>", [[<C-\><C-n>]], { silent = true })
+vim.keymap.set("t", "<Esc><Esc>", [[<C-\><C-n>]], { silent = true })
 vim.keymap.set("t", "<C-o>", [[<C-\><C-n>:b#<Cr>]], { silent = true })
 vim.api.nvim_create_autocmd({ "TermOpen", "BufEnter" }, {
 	pattern = "*",

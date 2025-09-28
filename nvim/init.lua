@@ -64,7 +64,7 @@ vim.keymap.set("n", "<leader>bp", ":bprev<CR>", { silent = true })
 vim.keymap.set("n", "<leader>bn", ":bnext<CR>", { silent = true })
 vim.keymap.set("n", "<leader>bd", ":bd<CR>", { silent = true })
 
-vim.keymap.set({ "n", "i", "x" }, "<C-s>", "<Cmd>:w<CR><Esc>")
+vim.keymap.set({ "n", "i", "x" }, "<C-s>", "<Cmd>:w<CR><Esc>", { silent = true })
 vim.keymap.set({ "n", "i", "x" }, "<C-a>", "<Esc>ggVG")
 vim.keymap.set("i", "<C-v>", "<Esc>Pa", { remap = true })
 vim.keymap.set({ "x" }, "<C-c>", function()
@@ -76,6 +76,9 @@ vim.keymap.set({ "x" }, "P", '"_dP')
 vim.keymap.set({ "n", "i", "x" }, "<C-0>", "<C-v>")
 vim.keymap.set({ "n", "i" }, "<X1Mouse>", "<C-o>")
 vim.keymap.set({ "n", "i" }, "<X2Mouse>", "<C-i>")
+vim.keymap.set("n", "U", "<C-r>")
+vim.keymap.set("n", "<C-r>", "U") -- C-restore
+vim.keymap.set("i", "<C-BS>", "<Esc>vbs")
 
 vim.api.nvim_set_hl(0, "OnYankHighlight", { bg = "#FF4400" })
 vim.api.nvim_create_autocmd("TextYankPost", {
@@ -87,7 +90,7 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	end,
 })
 
--- marks & shadas
+-- shadas & sessions
 vim.api.nvim_create_autocmd("VimEnter", {
 	callback = function()
 		local arg = vim.fn.argv(0)
@@ -101,10 +104,21 @@ vim.api.nvim_create_autocmd("VimEnter", {
 			local shadafile = cache_dir .. "/shada/" .. unique_id .. ".shada"
 			vim.opt.shadafile = shadafile
 			pcall(vim.cmd.rshada)
+			-- restore sesh
+			vim.schedule(function()
+				vim.cmd("AutoSession restore")
+			end)
 		end
 	end,
 })
 
+vim.api.nvim_create_autocmd("VimLeavePre", {
+	callback = function()
+		vim.cmd("AutoSession save")
+	end,
+})
+
+-- marks
 vim.keymap.set("n", "M", function()
 	local mark = vim.fn.getcharstr()
 	vim.cmd("normal! m" .. string.upper(mark))
@@ -453,7 +467,10 @@ require("lazy").setup({
 			"rmagatti/auto-session",
 			config = function()
 				require("auto-session").setup({
-					auto_session_suppress_dirs = { "~/", "~/Downloads", "/" },
+					suppressed_dirs = { "~/", "~/Downloads", "/" },
+					auto_save = false,
+					auto_restore = false,
+					auto_create = false,
 				})
 				vim.o.sessionoptions = "buffers,curdir" --vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
 				--vim.cmd("b#")
@@ -501,7 +518,7 @@ require("lazy").setup({
 							enabled = true,
 							leave_dirs_open = true,
 						},
-						hijack_netrw_behavior = "open_default", -- replace netrw
+						hijack_netrw_behavior = "disabled", -- replace netrw
 						filtered_items = {
 							hide_dotfiles = false,
 							hide_gitignored = false,
@@ -527,7 +544,7 @@ require("lazy").setup({
 
 		{
 			"windwp/nvim-autopairs",
-			event = "VeryLazy",
+			event = "InsertEnter",
 			config = true,
 			opts = {},
 		},
@@ -624,7 +641,7 @@ require("lazy").setup({
 		{
 			"seblyng/roslyn.nvim",
 			opts = {},
-			ft = { "cs" }, -- mb switch for work
+			ft = { "cs" }, -- work machine - load eager
 		},
 
 		{
@@ -655,7 +672,6 @@ require("lazy").setup({
 			},
 			config = function()
 				vim.api.nvim_create_autocmd("LspAttach", {
-					--group = vim.api.nvim_create_augroup("kickstart-lsp-attach", { clear = true }),
 					callback = function(event)
 						local map = function(keys, func, desc, mode)
 							mode = mode or "n"
@@ -675,9 +691,6 @@ require("lazy").setup({
 							vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
 						end, "n")
 
-						--map("[e", vim.diagnostic.goto_prev())     check out trouble.nvim
-						--map("", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
-
 						-- Fuzzy find all the symbols in your current document.
 						map("gDs", telescope.lsp_document_symbols, "Open Document Symbols")
 						-- Fuzzy find all the symbols in your current workspace.
@@ -686,6 +699,7 @@ require("lazy").setup({
 						map("gtd", telescope.lsp_type_definitions, "[G]oto [T]ype Definition")
 					end,
 				})
+				-- drop conflicting maps
 				vim.keymap.del("n", "grn")
 				vim.keymap.del("n", "gra")
 				vim.keymap.del("n", "grr")
@@ -737,6 +751,7 @@ require("lazy").setup({
 					capabilities = capabilities,
 					settings = {
 						gopls = {
+							staticcheck = true,
 							hints = {
 								assignVariableTypes = true,
 								compositeLiteralFields = true,
@@ -789,7 +804,7 @@ require("lazy").setup({
 			end,
 		},
 
-		{ -- Autoformat
+		{
 			"stevearc/conform.nvim",
 			event = "VeryLazy",
 			keys = {
@@ -807,7 +822,7 @@ require("lazy").setup({
 				async = true,
 				notify_on_error = false,
 				format_on_save = function(bufnr)
-					local disable_filetypes = { c = true, cpp = true } --, cs = true } .editorconfig
+					local disable_filetypes = { c = true, cpp = true, cs = true } -- .editorconfig
 					if disable_filetypes[vim.bo[bufnr].filetype] then
 						return nil
 					else
@@ -829,6 +844,67 @@ require("lazy").setup({
 			},
 		},
 
+		{
+			"L3MON4D3/LuaSnip",
+			--dependencies = { "rafamadriz/friendly-snippets" },
+			config = function()
+				local ls = require("luasnip")
+				local s = ls.snippet
+				local t = ls.text_node
+				local i = ls.insert_node
+				local f = ls.function_node
+				local events = require("luasnip.util.events")
+
+				local function namespace_from_path()
+					local filepath = vim.fn.expand("%:p:h")
+					local root = vim.fn.getcwd()
+					local relpath = filepath:gsub("^" .. vim.pesc(root) .. "/", "")
+					return relpath:gsub("/", ".")
+				end
+				local function filename()
+					return vim.fn.expand("%:t:r")
+				end
+				local n = {
+					callbacks = {
+						[-1] = {
+							[events.leave] = function()
+								send_key("<Esc>", "i")
+							end,
+						},
+					},
+				}
+
+				ls.add_snippets("cs", {
+					s("initfile", {
+						t("namespace "),
+						f(namespace_from_path, {}),
+						t({ ";", "", "" }),
+						t("public interface I"),
+						f(filename, {}),
+						t({ "", "{", "\t" }),
+						i(0),
+						t({ "", "}", "", "" }),
+						t("public class "),
+						f(filename, {}),
+						t({ " : I" }),
+						f(filename, {}),
+						t({ "", "{", "\t", "}" }),
+					}, n),
+				})
+
+				ls.add_snippets("go", {
+					s("iferr", {
+						t({ "if err != nil {", "" }),
+						t("\t"),
+						t("return e"),
+						i(0),
+						t("rr"),
+						t({ "", "}" }),
+					}, n),
+				})
+			end,
+		},
+
 		{ -- Autocompletion
 			"Saghen/blink.cmp",
 			event = "VimEnter",
@@ -841,7 +917,8 @@ require("lazy").setup({
 			opts = {
 				keymap = {
 					["<CR>"] = { "accept", "fallback" },
-					["<Tab>"] = { "accept", "fallback" },
+					["<Tab>"] = { "snippet_forward", "fallback" },
+					["<S-Tab>"] = { "snippet_backward", "fallback" },
 					-- :h ins-completion :h blink-cmp-config-keymap
 					preset = "default",
 				},
@@ -865,15 +942,13 @@ require("lazy").setup({
 						lazydev = { module = "lazydev.integrations.blink", score_offset = 100 },
 					},
 				},
-				--snippets = { preset = "luasnip" },
-				-- TODO
-
-				-- See :h blink-cmp-config-fuzzy for more information
+				snippets = {
+					preset = "luasnip",
+				},
+				-- :h blink-cmp-config-fuzzy
 				fuzzy = { implementation = "prefer_rust_with_warning" },
-
-				-- Shows a signature help window while you type arguments for a function
+				-- func signatures
 				signature = { enabled = true },
-
 				cmdline = {
 					keymap = { preset = "inherit" },
 					completion = {

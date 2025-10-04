@@ -1,7 +1,6 @@
-vim.g.mapleader = ";"
+vim.g.mapleader = ","
 vim.g.maplocalleader = " "
 vim.g.have_nerd_font = true
-vim.keymap.set({ "n", "x" }, ";;", ";")
 vim.keymap.set("i", "qq", "<Esc>")
 
 vim.opt.number = true
@@ -298,7 +297,6 @@ require("lazy").setup({
 
 		{
 			"nvim-telescope/telescope.nvim",
-			event = "VeryLazy",
 			branch = "master",
 			dependencies = {
 				"nvim-lua/plenary.nvim",
@@ -354,23 +352,27 @@ require("lazy").setup({
 				})
 				telescope.load_extension("ui-select")
 
-				vim.keymap.set("n", "<leader>ff", builtin.find_files)
-				vim.keymap.set("n", "<leader>fg", builtin.live_grep) -- regex
-				vim.keymap.set("x", "<leader>fg", function()
+				vim.keymap.set("n", "gf", builtin.find_files)
+				vim.keymap.set("n", "gF", builtin.live_grep) -- regex
+				vim.keymap.set("x", "gF", function()
 					vim.cmd('normal! "zy')
 					local text = vim.fn.getreg("z")
 					text = text:gsub("[\r\n]+$", "")
 					builtin.grep_string({ default_text = text }) -- literal str
 				end, { silent = true })
-				vim.keymap.set("n", "<leader>ft", builtin.lsp_dynamic_workspace_symbols)
-				vim.keymap.set("n", "<leader>fr", builtin.resume)
-				vim.keymap.set("n", "<leader>bg", function()
-					builtin.live_grep({ grep_open_files = true, prompt_title = "Live Grep (Buffers)" })
-				end)
-				vim.keymap.set("n", "<leader>bf", function()
+
+				vim.keymap.set("n", "gs", builtin.lsp_dynamic_workspace_symbols)
+
+				vim.keymap.set("n", "gb", function()
 					builtin.buffers()
 				end)
-				vim.keymap.set("n", "<leader>fm", builtin.marks)
+				vim.keymap.set("n", "gB", function()
+					builtin.live_grep({ grep_open_files = true, prompt_title = "Live Grep (Buffers)" })
+				end)
+
+				vim.keymap.set("n", "gm", builtin.marks)
+
+				vim.keymap.set("n", "g<BS>", builtin.resume)
 			end,
 		},
 
@@ -553,7 +555,15 @@ require("lazy").setup({
 		{
 			"numToStr/Comment.nvim",
 			event = "VeryLazy",
-			opts = {},
+			opts = {
+				toggler = {
+					line = "gc",
+				},
+				mappings = {
+					basic = false,
+					extra = false,
+				},
+			},
 		},
 
 		{
@@ -810,7 +820,7 @@ require("lazy").setup({
 			event = "VeryLazy",
 			keys = {
 				{
-					"gq",
+					"<leader>=",
 					function()
 						require("conform").format({ async = true, lsp_format = "fallback" })
 						send_key("<Esc>", "n")

@@ -35,9 +35,10 @@ zstyle ':completion:*' menu select=1
 bindkey -M menuselect '^H' vi-backward-char
 bindkey -M menuselect '^L' vi-forward-char
 
-alias ls='ls --color=auto'
+alias ls='ls --color=auto -p'
 alias grep='grep --color=auto'
 alias oh-come-on='/home/fi/dev/oh-come-on/bin/oh-come-on'
+alias pgitp='/home/fi/dev/pgitp/pgitp.sh'
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 export DOTNET_ROOT=$HOME/dothate/dotnet-sdk-10.0.100-p7-linux-x64
 export PATH=$PATH:$HOME/dothate/dotnet-sdk-10.0.100-p7-linux-x64

@@ -36,17 +36,17 @@ cp ~/dots/exec-past-cmd.zsh ~/exec-past-cmd.zsh
 cp ~/dots/wofi-mullvad-switch-host.py ~/wofi-mullvad-switch-host.py
 
 sudo mkdir -p /etc/keyd
-sudo cp $dots/etc/keyd/default.conf /etc/keyd/default.conf
+sudo cp ~/dots/etc/keyd/default.conf /etc/keyd/default.conf
 sudo chown root:root /etc/keyd/default.conf
 sudo systemctl enable keyd
 
 # skipping amdgpu mclk hack
 sudo mkdir -p /etc/systemd/system/wpa_supplicant.service.d
-sudo cp $dots/etc/systemd/system/wpa_supplicant.service.d/log.conf /etc/systemd/system/wpa_supplicant.service.d/log.conf
+sudo cp ~/dots/etc/systemd/system/wpa_supplicant.service.d/log.conf /etc/systemd/system/wpa_supplicant.service.d/log.conf
 sudo chown root:root /etc/systemd/system/wpa_supplicant.service.d/log.conf
 
 sudo mkdir -p /etc/NetworkManager/conf.d
-sudo cp $dots/etc/NetworkManager/conf.d/wifi-powersave-off.conf /etc/NetworkManager/conf.d/wifi-powersave-off.conf
+sudo cp ~/dots/etc/NetworkManager/conf.d/wifi-powersave-off.conf /etc/NetworkManager/conf.d/wifi-powersave-off.conf
 sudo chown root:root /etc/NetworkManager/conf.d/wifi-powersave-off.conf
 
 mkdir -p ~/.zsh

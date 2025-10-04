@@ -18,8 +18,8 @@ sudo systemctl enable sddm
 # Session=hyprland.desktop
 
 mkdir -p ~/dev
-git clone --depth 1 'https://github.com/ivfiev/...............git' ~/dev
-dots='~/dev/..............'
+git clone --depth 1 'https://github.com/ivfiev/...............git'
+dots='~/..............'
 mkdir -p ~/.config
 mkdir -p ~/Wallpapers
 

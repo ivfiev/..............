@@ -18,23 +18,22 @@ sudo systemctl enable sddm
 # Session=hyprland.desktop
 
 mkdir -p ~/dev
-git clone --depth 1 'https://github.com/ivfiev/...............git'
-dots='~/..............'
+git clone --depth 1 'https://github.com/ivfiev/...............git' ~/dots
 mkdir -p ~/.config
 mkdir -p ~/Wallpapers
 
-cp -r $dots/hypr ~/.config  # monitors
-cp -r $dots/kitty ~/.config
-cp -r $dots/nvim ~/.config  # node/npm
+cp -r ~/dots/hypr ~/.config  # monitors
+cp -r ~/dots/kitty ~/.config
+cp -r ~/dots/nvim ~/.config  # node/npm
 rm ~/.config/nvim/lazy-lock.json
-cp -r $dots/wofi ~/.config
-cp -r $dots/waybar ~/.config
-cp -r $dots/wlogout ~/.config
-cp $dots/.zshrc ~/.zshrc
-cp $dots/toggle-waybar.sh ~/toggle-waybar.sh
-cp $dots/random-wallpapers.sh ~/random-wallpapers.sh
-cp $dots/exec-past-cmd.zsh ~/exec-past-cmd.zsh
-cp $dots/wofi-mullvad-switch-host.py ~/wofi-mullvad-switch-host.py
+cp -r ~/dots/wofi ~/.config
+cp -r ~/dots/waybar ~/.config
+cp -r ~/dots/wlogout ~/.config
+cp ~/dots/.zshrc ~/.zshrc
+cp ~/dots/toggle-waybar.sh ~/toggle-waybar.sh
+cp ~/dots/random-wallpapers.sh ~/random-wallpapers.sh
+cp ~/dots/exec-past-cmd.zsh ~/exec-past-cmd.zsh
+cp ~/dots/wofi-mullvad-switch-host.py ~/wofi-mullvad-switch-host.py
 
 sudo mkdir -p /etc/keyd
 sudo cp $dots/etc/keyd/default.conf /etc/keyd/default.conf

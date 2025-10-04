@@ -9,7 +9,8 @@ sudo passwd -l root
 sudo systemctl enable fstrim.timer
 
 sudo pacman -Syu --needed wget sddm kitty git fd neovim ripgrep hyprland keyd network-manager-applet swww ttf-jetbrains-mono-nerd ufw waybar ydotool zsh wofi vim \
-    dmidecode fastfetch strace iotop papirus-icon-theme power-profiles-daemon pavucontrol grim slurp smartmontools python lazygit yazi base-devel
+    dmidecode fastfetch strace iotop papirus-icon-theme power-profiles-daemon pavucontrol grim slurp smartmontools python lazygit yazi base-devel \
+    python-gobject xdg-desktop-portal-gtk xdg-desktop-portal-hyprland gnome-system-monitor gnome-themes-extra nwg-look wl-clipboard noto-fonts-emoji #or other
 
 sudo systemctl enable sddm
 # /etc/sddm.conf
@@ -22,7 +23,7 @@ git clone --depth 1 'https://github.com/ivfiev/...............git' ~/dots
 mkdir -p ~/.config
 mkdir -p ~/Wallpapers
 
-cp -r ~/dots/hypr ~/.config  # monitors
+cp -r ~/dots/hypr ~/.config  # monitors & workspaces(!), kbdlayout
 cp -r ~/dots/kitty ~/.config
 cp -r ~/dots/nvim ~/.config  # node/npm
 rm ~/.config/nvim/lazy-lock.json
@@ -60,10 +61,14 @@ cd ~/dev/yay
 makepkg -si
 yay -Syu wlogout fatrace catproccpuinfogrepmhz
 
-sudo systemctl enable ufw
+sudo ufw enable
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
 
 rm -rf ~/dots
 
+echo "Rebooting...."
+sleep 3
 reboot
+
+# themes, grub timeout, autologin, browser, makepkg.conf !debug/native march

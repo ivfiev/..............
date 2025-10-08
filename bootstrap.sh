@@ -13,20 +13,17 @@ sudo pacman -Syu --needed wget sddm kitty git fd neovim ripgrep hyprland keyd ne
     python-gobject xdg-desktop-portal-gtk xdg-desktop-portal-hyprland gnome-system-monitor gnome-themes-extra nwg-look wl-clipboard noto-fonts-emoji \
     unzip ncdu bluetui
 
+echo -n "[Autologin]\nUser=$USER\nSession=hyprland.desktop" | sudo tee /etc/sddm.conf
 sudo systemctl enable sddm
-# /etc/sddm.conf
-# [Autologin]
-# User=$USER
-# Session=hyprland.desktop
 
 mkdir -p ~/dev
 git clone --depth 1 'https://github.com/ivfiev/...............git' ~/dots
 mkdir -p ~/.config
 mkdir -p ~/Wallpapers
 
-cp -r ~/dots/hypr ~/.config  # monitors & workspaces(!), kbdlayout
+cp -r ~/dots/hypr ~/.config  # monitors & workspaces(!), kb_layout
 cp -r ~/dots/kitty ~/.config
-cp -r ~/dots/nvim ~/.config  # node/npm
+cp -r ~/dots/nvim ~/.config 
 rm ~/.config/nvim/lazy-lock.json
 cp -r ~/dots/wofi ~/.config
 cp -r ~/dots/waybar ~/.config
@@ -42,7 +39,9 @@ sudo cp /home/$USER/dots/etc/keyd/default.conf /etc/keyd/default.conf
 sudo chown root:root /etc/keyd/default.conf
 sudo systemctl enable keyd
 
-# skipping amdgpu mclk hack here, pacman -S radeontop
+# pacman -S radeontop
+# amdgpu mclk hack
+
 sudo mkdir -p /etc/systemd/system/wpa_supplicant.service.d
 sudo cp /home/$USER/dots/etc/systemd/system/wpa_supplicant.service.d/log.conf /etc/systemd/system/wpa_supplicant.service.d/log.conf
 sudo chown root:root /etc/systemd/system/wpa_supplicant.service.d/log.conf
@@ -62,6 +61,9 @@ cd ~/dev/yay
 makepkg -si
 yay -Syu wlogout fatrace catproccpuinfogrepmhz
 
+sudo sed -i 's/^GRUB_TIMEOUT *= *[0-9]*$/GRUB_TIMEOUT=0/' /etc/default/grub
+sudo grub-mkconfig -o /boot/grub/grub.cfg
+
 sudo ufw enable
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
@@ -72,4 +74,5 @@ echo "Rebooting...."
 sleep 3
 reboot
 
-# themes, grub timeout, autologin, browser, makepkg.conf !debug/native march
+# makepkg.conf !debug/native march/mtune
+# TODO themes/icons in hypr.conf?

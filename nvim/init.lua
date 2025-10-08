@@ -188,7 +188,7 @@ vim.keymap.set("n", "<leader>gb", function()
 	end
 	local msg =
 		string.format("%s:%s - [%s] @ [%s] -> [%s]  ", file_name, line_num, author or "?", time or "?", summary or "?")
-	vim.notify(msg, vim.log.levels.INFO, { title = "blame " })
+	vim.notify(msg, vim.log.levels.INFO, { title = "blame " }) -- TODO maybe virt text
 end)
 
 vim.lsp.set_log_level("ERROR")

@@ -363,11 +363,9 @@ require("lazy").setup({
 
 				vim.keymap.set("n", "gs", builtin.lsp_dynamic_workspace_symbols)
 
-				vim.keymap.set("n", "gb", function()
-					builtin.buffers()
-				end)
+				-- gb snipe
 				vim.keymap.set("n", "gB", function()
-					builtin.live_grep({ grep_open_files = true, prompt_title = "Live Grep (Buffers)" })
+					builtin.buffers()
 				end)
 
 				vim.keymap.set("n", "gm", builtin.marks)
@@ -603,7 +601,7 @@ require("lazy").setup({
 			event = "VeryLazy",
 			keys = {
 				{
-					"<leader>s",
+					"gb",
 					function()
 						require("snipe").open_buffer_menu()
 					end,
@@ -754,8 +752,14 @@ require("lazy").setup({
 					settings = {
 						["rust-analyzer"] = {
 							cargo = { all_features = true },
+							checkOnSave = { command = "clippy" },
 						},
 					},
+					on_attach = function(_, _)
+						vim.defer_fn(function()
+							vim.lsp.handlers["$/progress"] = function() end
+						end, 10000)
+					end,
 				})
 				vim.lsp.config("pyright", { capabilities = capabilities })
 				vim.lsp.config("gopls", {

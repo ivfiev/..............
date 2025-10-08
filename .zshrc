@@ -44,4 +44,5 @@ export DOTNET_ROOT=$HOME/dothate/dotnet-sdk-10.0.100-p7-linux-x64
 export PATH=$PATH:$HOME/dothate/dotnet-sdk-10.0.100-p7-linux-x64
 
 export EDITOR=nvim
+export SUDO_EDITOR=nvim
 alias vim=nvim

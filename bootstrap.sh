@@ -10,7 +10,8 @@ sudo systemctl enable fstrim.timer
 
 sudo pacman -Syu --needed wget sddm kitty git fd neovim ripgrep hyprland keyd network-manager-applet swww ttf-jetbrains-mono-nerd ufw waybar ydotool zsh wofi vim \
     dmidecode fastfetch strace iotop papirus-icon-theme power-profiles-daemon pavucontrol grim slurp smartmontools python lazygit yazi base-devel \
-    python-gobject xdg-desktop-portal-gtk xdg-desktop-portal-hyprland gnome-system-monitor gnome-themes-extra nwg-look wl-clipboard noto-fonts-emoji #or other
+    python-gobject xdg-desktop-portal-gtk xdg-desktop-portal-hyprland gnome-system-monitor gnome-themes-extra nwg-look wl-clipboard noto-fonts-emoji \
+    unzip ncdu bluetui
 
 sudo systemctl enable sddm
 # /etc/sddm.conf
@@ -41,7 +42,7 @@ sudo cp /home/$USER/dots/etc/keyd/default.conf /etc/keyd/default.conf
 sudo chown root:root /etc/keyd/default.conf
 sudo systemctl enable keyd
 
-# skipping amdgpu mclk hack
+# skipping amdgpu mclk hack here, pacman -S radeontop
 sudo mkdir -p /etc/systemd/system/wpa_supplicant.service.d
 sudo cp /home/$USER/dots/etc/systemd/system/wpa_supplicant.service.d/log.conf /etc/systemd/system/wpa_supplicant.service.d/log.conf
 sudo chown root:root /etc/systemd/system/wpa_supplicant.service.d/log.conf

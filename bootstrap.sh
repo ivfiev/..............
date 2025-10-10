@@ -11,7 +11,7 @@ sudo systemctl enable fstrim.timer
 sudo pacman -Syu --needed wget sddm kitty git fd neovim ripgrep hyprland keyd network-manager-applet swww ttf-jetbrains-mono-nerd ufw waybar ydotool zsh wofi vim \
     dmidecode fastfetch strace iotop papirus-icon-theme power-profiles-daemon pavucontrol grim slurp smartmontools python lazygit yazi base-devel \
     python-gobject xdg-desktop-portal-gtk xdg-desktop-portal-hyprland gnome-system-monitor gnome-themes-extra nwg-look wl-clipboard noto-fonts-emoji \
-    unzip ncdu bluetui
+    unzip ncdu bluetui radeontop
 
 echo -n "[Autologin]\nUser=$USER\nSession=hyprland.desktop" | sudo tee /etc/sddm.conf
 sudo systemctl enable sddm
@@ -20,6 +20,7 @@ mkdir -p ~/dev
 git clone --depth 1 'https://github.com/ivfiev/...............git' ~/dots
 mkdir -p ~/.config
 mkdir -p ~/Wallpapers
+mkdir -p ~/Wallpapers2
 
 cp -r ~/dots/hypr ~/.config  # monitors & workspaces(!), kb_layout
 cp -r ~/dots/kitty ~/.config
@@ -39,7 +40,6 @@ sudo cp /home/$USER/dots/etc/keyd/default.conf /etc/keyd/default.conf
 sudo chown root:root /etc/keyd/default.conf
 sudo systemctl enable keyd
 
-# pacman -S radeontop
 # amdgpu mclk hack
 
 sudo mkdir -p /etc/systemd/system/wpa_supplicant.service.d
@@ -75,4 +75,5 @@ sleep 3
 reboot
 
 # makepkg.conf !debug/native march/mtune
+# brightnessctl
 # TODO themes/icons in hypr.conf?

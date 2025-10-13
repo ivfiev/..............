@@ -12,6 +12,6 @@ cat ~/.config/waybar/config.jsonc > $REPO/waybar/config.jsonc
 cat ~/.config/waybar/style.css > $REPO/waybar/style.css
 cat ~/.config/wlogout/layout > $REPO/wlogout/layout
 cat ~/.config/wofi/style.css > $REPO/wofi/style.css
-cp ~/.bashrc ~/.zshrc ~/exec-past-cmd.zsh ~/random-wallpapers.sh ~/toggle-waybar.sh ~/wofi-mullvad-switch-host.py "$REPO/"
+cp ~/.zshrc ~/exec-past-cmd.zsh ~/random-wallpapers.sh ~/toggle-waybar.sh ~/wofi-mullvad-switch-host.py "$REPO/"
 cp -r ~/.config/nvim $REPO/
 cp ~/sync-dots.sh $REPO/sync-dots.sh

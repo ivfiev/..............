@@ -68,6 +68,8 @@ sudo ufw enable
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
 
+echo -e "kernel.core_pattern=|/bin/false" | sudo tee /etc/sysctl.d/50-coredump.conf
+
 rm -rf ~/dots
 
 echo "Rebooting...."
@@ -76,4 +78,3 @@ reboot
 
 # makepkg.conf !debug/native march/mtune
 # brightnessctl
-# TODO themes/icons in hypr.conf?

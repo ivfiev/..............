@@ -12,8 +12,8 @@ compinit
 PS1='%F{cyan}[%n %F{magenta}%~%f%F{cyan}] '
 
 HISTFILE=~/.zsh_history
-HISTSIZE=10000
-SAVEHIST=10000
+HISTSIZE=20000
+SAVEHIST=20000
 setopt inc_append_history
 setopt share_history
 setopt hist_ignore_dups

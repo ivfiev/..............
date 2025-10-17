@@ -8,13 +8,13 @@ set -e
 sudo passwd -l root
 sudo systemctl enable fstrim.timer
 
-sudo pacman -Syu --needed wget sddm kitty git fd neovim ripgrep hyprland keyd network-manager-applet swww ttf-jetbrains-mono-nerd ufw waybar zsh wofi vim \
+sudo pacman -Syu --needed wget greetd kitty git fd neovim ripgrep hyprland keyd network-manager-applet swww ttf-jetbrains-mono-nerd ufw waybar zsh wofi vim \
     dmidecode fastfetch strace iotop papirus-icon-theme power-profiles-daemon pavucontrol grim slurp smartmontools python lazygit yazi base-devel \
     python-gobject xdg-desktop-portal-gtk xdg-desktop-portal-hyprland gnome-system-monitor gnome-themes-extra wl-clipboard noto-fonts-emoji \
     unzip ncdu bluetui radeontop
 
-echo -e "[Autologin]\nUser=$USER\nSession=hyprland.desktop" | sudo tee /etc/sddm.conf
-sudo systemctl enable sddm
+echo -e '[terminal]\nvt = 1\n\n[default_session]\ncommand = "Hyprland"\nuser = "$USER"' | sudo tee /etc/greetd/config.toml
+sudo systemctl enable greetd
 
 mkdir -p ~/dev
 git clone --depth 1 'https://github.com/ivfiev/...............git' ~/dots
@@ -78,3 +78,4 @@ reboot
 
 # makepkg.conf !debug/native march/mtune
 # brightnessctl
+# ipv6, sep file for blacklist drivers

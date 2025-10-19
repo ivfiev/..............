@@ -11,7 +11,7 @@ sudo systemctl enable fstrim.timer
 sudo pacman -Syu --needed wget greetd kitty git fd neovim ripgrep hyprland keyd network-manager-applet swww ttf-jetbrains-mono-nerd ufw waybar zsh wofi vim \
     dmidecode fastfetch strace iotop papirus-icon-theme power-profiles-daemon pavucontrol grim slurp smartmontools python lazygit yazi base-devel \
     python-gobject xdg-desktop-portal-gtk xdg-desktop-portal-hyprland gnome-system-monitor gnome-themes-extra wl-clipboard noto-fonts-emoji \
-    unzip ncdu bluetui radeontop
+    unzip ncdu bluetui radeontop hyprpicker brightnessctl
 
 echo -e '[terminal]\nvt = 1\n\n[default_session]\ncommand = "Hyprland"\nuser = "$USER"' | sudo tee /etc/greetd/config.toml
 sudo systemctl enable greetd
@@ -60,6 +60,7 @@ git clone https://aur.archlinux.org/yay.git ~/dev/yay
 cd ~/dev/yay
 makepkg -si
 yay -Syu wlogout fatrace catproccpuinfogrepmhz
+go telemetry off
 
 sudo sed -i 's/^GRUB_TIMEOUT *= *[0-9]*$/GRUB_TIMEOUT=0/' /etc/default/grub
 sudo grub-mkconfig -o /boot/grub/grub.cfg
@@ -77,5 +78,4 @@ sleep 3
 reboot
 
 # makepkg.conf !debug/native march/mtune
-# brightnessctl
 # ipv6, sep file for blacklist drivers

@@ -1,0 +1,11 @@
+[Unit]
+Description=Disable fucking F4 backlight
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'echo 0 | sudo tee /sys/class/leds/platform::micmute/brightness'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -13,7 +13,7 @@ sudo pacman -Syu --needed wget greetd kitty git fd neovim ripgrep hyprland keyd 
     python-gobject xdg-desktop-portal-gtk xdg-desktop-portal-hyprland gnome-system-monitor gnome-themes-extra wl-clipboard noto-fonts-emoji \
     unzip ncdu bluetui radeontop hyprpicker brightnessctl
 
-echo -e '[terminal]\nvt = 1\n\n[default_session]\ncommand = "Hyprland"\nuser = "$USER"' | sudo tee /etc/greetd/config.toml
+echo -e "[terminal]\nvt = 1\n\n[default_session]\ncommand = \"Hyprland\"\nuser = \"$USER\"" | sudo tee /etc/greetd/config.toml
 sudo systemctl enable greetd
 
 mkdir -p ~/dev

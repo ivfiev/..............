@@ -4,7 +4,7 @@ After=multi-user.target
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c 'echo 0 | sudo tee /sys/class/leds/platform::micmute/brightness'
+ExecStart=/bin/sh -c 'echo 0 | sudo tee /sys/class/leds/platform::micmute/brightness /sys/class/leds/platform::fnlock/brightness'
 RemainAfterExit=yes
 
 [Install]

@@ -149,7 +149,7 @@
 
     "custom/power": {
         "format": "⏻",
-        "on-click": "wlogout",
+        "on-click": "sh ~/wlogout.sh",
         "tooltip": false
     }    
 }

@@ -1,0 +1,9 @@
+[mgr]
+ratio = [1, 2, 7]
+
+[preview]
+tab_size = 4
+max_width = 4096
+max_height = 4096
+image_quality = 90
+image_filter = "lanczos3"

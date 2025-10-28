@@ -11,7 +11,7 @@ sudo systemctl enable fstrim.timer
 sudo pacman -Syu --needed wget greetd kitty git fd neovim ripgrep hyprland keyd network-manager-applet swww ttf-jetbrains-mono-nerd ufw waybar zsh wofi vim \
     dmidecode fastfetch strace iotop papirus-icon-theme power-profiles-daemon pavucontrol grim slurp smartmontools python lazygit yazi base-devel \
     python-gobject xdg-desktop-portal-gtk xdg-desktop-portal-hyprland gnome-system-monitor gnome-themes-extra wl-clipboard noto-fonts-emoji \
-    unzip ncdu bluetui radeontop hyprpicker brightnessctl
+    unzip ncdu bluetui radeontop hyprpicker brightnessctl ffmpeg imagemagick
 
 echo -e "[terminal]\nvt = 1\n\n[default_session]\ncommand = \"Hyprland\"\nuser = \"$USER\"" | sudo tee /etc/greetd/config.toml
 sudo systemctl enable greetd
@@ -28,12 +28,13 @@ cp -r ~/dots/nvim ~/.config
 rm ~/.config/nvim/lazy-lock.json
 cp -r ~/dots/wofi ~/.config
 cp -r ~/dots/waybar ~/.config
-cp -r ~/dots/wlogout ~/.config
-cp ~/dots/.zshrc ~/.zshrc
-cp ~/dots/toggle-waybar.sh ~/toggle-waybar.sh
-cp ~/dots/random-wallpapers.sh ~/random-wallpapers.sh
-cp ~/dots/exec-past-cmd.zsh ~/exec-past-cmd.zsh
-cp ~/dots/wofi-mullvad-switch-host.py ~/wofi-mullvad-switch-host.py
+cp -r ~/dots/yazi ~/.config
+cp ~/dots/.zshrc ~/
+cp ~/dots/toggle-waybar.sh ~/
+cp ~/dots/random-wallpapers.sh ~/
+cp ~/dots/exec-past-cmd.zsh ~/
+cp ~/dots/wofi-mullvad-switch-host.py ~/
+cp ~/dots/wlogout.sh ~/
 
 sudo mkdir -p /etc/keyd
 sudo cp /home/$USER/dots/etc/keyd/default.conf /etc/keyd/default.conf
@@ -56,10 +57,11 @@ git clone https://github.com/zsh-users/zsh-completions.git ~/.zsh/zsh-completion
 git clone https://github.com/zsh-users/zsh-autosuggestions.git ~/.zsh/zsh-autosuggestions
 chsh -s $(which zsh)
 
+sudo sed -i '/^OPTIONS=/ s/\bdebug\b/!debug/' /etc/makepkg.conf
 git clone https://aur.archlinux.org/yay.git ~/dev/yay
 cd ~/dev/yay
 makepkg -si
-yay -Syu wlogout fatrace catproccpuinfogrepmhz
+yay -Syu fatrace catproccpuinfogrepmhz
 go telemetry off
 
 sudo sed -i 's/^GRUB_TIMEOUT *= *[0-9]*$/GRUB_TIMEOUT=0/' /etc/default/grub
@@ -68,6 +70,7 @@ sudo grub-mkconfig -o /boot/grub/grub.cfg
 sudo ufw enable
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
+sudo systemctl enable ufw
 
 echo -e "kernel.core_pattern=|/bin/false" | sudo tee /etc/sysctl.d/50-coredump.conf
 
@@ -77,5 +80,6 @@ echo "Rebooting...."
 sleep 3
 reboot
 
-# makepkg.conf !debug/native march/mtune
-# ipv6, sep file for blacklist drivers
+# makepkg.conf native march/mtune
+# ipv6
+# /etc/default/grub cryptdevice=...:allow-discards

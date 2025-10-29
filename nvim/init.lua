@@ -264,6 +264,7 @@ require("lazy").setup({
 						hl.BlinkCmpMenuSelection = { bg = "#002244" }
 						hl.NeoTreeCursorLine = { bg = "#002244" }
 						hl.TelescopeSelection = { bg = "#002244" }
+						hl.QuickFixLine = { bg = "#002244" }
 						hl.FlashCurrent = { bg = "#006666", fg = "#111111", bold = false }
 						hl.FlashMatch = { bg = "#006666", fg = "#111111", bold = false }
 						hl.FlashLabel = { bg = "#880088", fg = "#FAFAFA", bold = true }

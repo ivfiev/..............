@@ -118,7 +118,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
 			pcall(vim.cmd.rshada)
 			-- restore sesh
 			vim.schedule(function()
-				vim.cmd("AutoSession restore")
+				require("auto-session").restore_session(nil, { show_message = false })
 			end)
 		end
 	end,
@@ -126,7 +126,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
 
 vim.api.nvim_create_autocmd("VimLeavePre", {
 	callback = function()
-		vim.cmd("AutoSession save")
+		require("auto-session").save_session()
 	end,
 })
 
@@ -661,6 +661,11 @@ require("lazy").setup({
 				},
 				sort = "last",
 			},
+			config = function(_, opts)
+				require("snipe").setup(opts)
+				local ns = vim.api.nvim_get_namespaces()["snipe"]
+				vim.api.nvim_set_hl(ns, "CursorLine", { bg = "#002244" })
+			end,
 		},
 
 		{
@@ -1012,5 +1017,5 @@ require("lazy").setup({
 
 	install = { colorscheme = { "habamax" } },
 	-- automatically check for plugin updates
-	checker = { enabled = true },
+	checker = { enabled = false },
 })

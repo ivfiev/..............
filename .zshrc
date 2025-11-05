@@ -37,6 +37,10 @@ bindkey -M menuselect '^L' vi-forward-char
 
 alias ls='ls --color=auto -p'
 alias grep='grep --color=auto'
+alias oh-come-on="/home/$USER/dev/oh-come-on/bin/oh-come-on"
+alias pgitp="/home/$USER/dev/pgitp/pgitp.sh"
+
+export PATH=$PATH:$HOME/.ghcup/bin
 
 export EDITOR=nvim
 export SUDO_EDITOR=nvim

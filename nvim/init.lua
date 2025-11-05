@@ -477,6 +477,16 @@ require("lazy").setup({
 			dependencies = { "MunifTanjim/nui.nvim" },
 			config = function()
 				require("noice").setup({
+					routes = {
+						{
+							filter = {
+								event = "msg_show",
+								kind = "",
+								find = "B written",
+							},
+							opts = { skip = true },
+						},
+					},
 					presets = {
 						lsp_doc_border = true,
 					},
@@ -804,6 +814,11 @@ require("lazy").setup({
 				vim.lsp.config("hls", {
 					capabilities = capabilities,
 					filetypes = { "haskell", "lhaskell", "cabal" },
+					on_attach = function(client, _)
+						-- disable hls formatting
+						client.server_capabilities.documentFormattingProvider = false
+						client.server_capabilities.documentRangeFormattingProvider = false
+					end,
 				})
 				vim.lsp.config("gopls", {
 					capabilities = capabilities,

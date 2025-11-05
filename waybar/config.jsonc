@@ -16,7 +16,7 @@
         //"network",
 //        "backlight",
         "pulseaudio",
-        "pulseaudio#microphone",
+//        "pulseaudio#microphone",
         //"power-profiles-daemon",
         "bluetooth",
         "tray",

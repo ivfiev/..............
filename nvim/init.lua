@@ -424,7 +424,7 @@ require("lazy").setup({
 						lualine_c = {},
 						lualine_x = {
 							"diagnostics",
-							--"lsp_status",
+							"lsp_status",
 							--"encoding",
 							--"fileformat",
 							--"progress",
@@ -476,16 +476,14 @@ require("lazy").setup({
 			"folke/noice.nvim",
 			dependencies = { "MunifTanjim/nui.nvim" },
 			config = function()
+				local skip = function(event, kind, find)
+					return { filter = { event = event, kind = kind, find = find }, opts = { skip = true } }
+				end
 				require("noice").setup({
 					routes = {
-						{
-							filter = {
-								event = "msg_show",
-								kind = "",
-								find = "B written",
-							},
-							opts = { skip = true },
-						},
+						skip("msg_show", "", "B written"),
+						skip("notify", "info", "Roslyn"),
+						skip("msg_show", "lua_error", "lsp_status.lua:"),
 					},
 					presets = {
 						lsp_doc_border = true,

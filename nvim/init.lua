@@ -377,9 +377,11 @@ require("lazy").setup({
 
 				vim.keymap.set("n", "gs", builtin.lsp_dynamic_workspace_symbols)
 
-				-- gb snipe
-				vim.keymap.set("n", "gB", function()
+				vim.keymap.set("n", "gb", function()
 					builtin.buffers()
+				end)
+				vim.keymap.set("n", "gB", function()
+					builtin.live_grep({ grep_open_files = true, prompt_title = "Live Grep (Buffers)" })
 				end)
 
 				vim.keymap.set("n", "gm", builtin.marks)
@@ -648,7 +650,7 @@ require("lazy").setup({
 			event = "VeryLazy",
 			keys = {
 				{
-					"gb",
+					"<leader>s",
 					function()
 						require("snipe").open_buffer_menu()
 					end,
@@ -921,6 +923,7 @@ require("lazy").setup({
 				formatters_by_ft = {
 					lua = { "stylua" },
 					go = { "goimports", "gofumpt" },
+					python = { "black" },
 				},
 				formatters = {
 					gofumpt = {

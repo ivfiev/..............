@@ -28,6 +28,8 @@ bindkey '^[[23~' beginning-of-line # cat -v
 bindkey '^[[24~' end-of-line
 bindkey '\e[1;5D' backward-word
 bindkey '\e[1;5C' forward-word
+bindkey "^[[A" history-search-backward
+bindkey "^[[B" history-search-forward # ctrl+u, ctrl+a, ctrl+e
 
 zmodload zsh/complist
 

@@ -810,7 +810,17 @@ require("lazy").setup({
 						},
 					},
 				})
-				vim.lsp.config("pyright", { capabilities = capabilities })
+				vim.lsp.config("basedpyright", {
+					capabilities = capabilities,
+					settings = {
+						basedpyright = {
+							analysis = {
+								typeCheckingMode = "basic",
+								autoImportCompletions = true,
+							},
+						},
+					},
+				})
 				vim.lsp.config("hls", {
 					capabilities = capabilities,
 					filetypes = { "haskell", "lhaskell", "cabal" },

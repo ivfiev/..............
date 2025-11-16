@@ -816,7 +816,7 @@ require("lazy").setup({
 						basedpyright = {
 							analysis = {
 								typeCheckingMode = "basic",
-								autoImportCompletions = true,
+								autoImportCompletions = false,
 							},
 						},
 					},

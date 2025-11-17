@@ -7,18 +7,24 @@
 }
 
 #window {
-  background: rgba(41, 46, 66, 0.95);
+  background: rgba(7, 4, 7, 0.85);
   margin: auto;
   padding: 10px;
-  border-radius: 20px;
-  border: 1px solid #00ff99;
+  border-radius: 15px;
+  border: 1.5px solid #009faf;
 }
 
 #input {
   padding: 10px;
   margin-bottom: 10px;
   border-radius: 15px;
+  color: #c0caf5;
+  border: 1px solid #009faf;
 }
+
+#input:focus {
+  box-shadow: none;
+} 
 
 #outer-box {
   padding: 20px;
@@ -34,11 +40,12 @@
 }
 
 #entry:selected {
-  background-color: rgba(128,0,128,0.2);
+  background-color: rgba(0,240,256,0.25);
   outline: 0;
 }
 
 #text {
   margin: 2px;
+  color: #c0caf5;
 }
 

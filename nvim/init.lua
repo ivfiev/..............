@@ -92,6 +92,9 @@ vim.keymap.set("n", "U", "<C-r>")
 vim.keymap.set("n", "<C-r>", "U") -- C-restore
 vim.keymap.set("i", "<C-BS>", "<Esc>vbs")
 
+vim.keymap.set({ "x", "n" }, "<C-u>", "<C-u>zz")
+vim.keymap.set({ "x", "n" }, "<C-d>", "<C-d>zz")
+
 vim.api.nvim_set_hl(0, "OnYankHighlight", { bg = "#FF4400" })
 vim.api.nvim_create_autocmd("TextYankPost", {
 	callback = function()

@@ -6,5 +6,5 @@ case $choice in
   "⏻  Off") systemctl poweroff;;
   "⭘  Reboot") systemctl reboot;;
   "⏼  Suspend") systemctl suspend;;
-  "⇄  Logout") loginctl terminate-session 1;;
+  "⇄  Logout") loginctl | grep greeter | awk '{print $1}' | xargs loginctl terminate-session;;
 esac

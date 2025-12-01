@@ -3,3 +3,4 @@ image_size = 20
 no_actions = true
 prompt=
 insensitive = true
+hide_scroll = true

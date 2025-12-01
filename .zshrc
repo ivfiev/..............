@@ -5,7 +5,9 @@ fpath+=~/.zsh/zsh-completions/src
 zstyle ':completion:*' list-colors ''
 zstyle :compinstall filename '~/.zshrc'
 
-autoload -Uz compinit
+autoload -Uz compinit edit-command-line
+zle -N edit-command-line
+
 compinit
 # End of lines added by compinstall
 #
@@ -22,6 +24,7 @@ setopt hist_reduce_blanks
 source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
 source ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 bindkey '^L' autosuggest-accept
+bindkey '^W' forward-word
 ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 
 bindkey '^[[23~' beginning-of-line # cat -v
@@ -30,6 +33,7 @@ bindkey '\e[1;5D' backward-word
 bindkey '\e[1;5C' forward-word
 bindkey "^[[A" history-search-backward
 bindkey "^[[B" history-search-forward # ctrl+u, ctrl+a, ctrl+e
+bindkey '^X^E' edit-command-line
 
 zmodload zsh/complist
 
@@ -39,6 +43,9 @@ bindkey -M menuselect '^L' vi-forward-char
 
 alias ls='ls --color=auto -p'
 alias grep='grep --color=auto'
+alias cp='cp -v'
+alias rm='rm -v'
+alias mv='mv -v'
 alias oh-come-on="/home/$USER/dev/oh-come-on/bin/oh-come-on"
 alias pgitp="/home/$USER/dev/pgitp/pgitp.sh"
 

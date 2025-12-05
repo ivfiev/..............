@@ -72,10 +72,6 @@ vim.keymap.set("n", "ZZ", "<Cmd>wqa<CR>")
 vim.keymap.set({ "x" }, ">", ">gv")
 vim.keymap.set({ "x" }, "<", "<gv")
 
-vim.keymap.set("n", "<leader>bp", ":bprev<CR>", { silent = true })
-vim.keymap.set("n", "<leader>bn", ":bnext<CR>", { silent = true })
-vim.keymap.set("n", "<leader>bd", ":bd<CR>", { silent = true })
-
 vim.keymap.set({ "n", "i", "x" }, "<C-s>", "<Cmd>:w<CR><Esc>", { silent = true })
 vim.keymap.set({ "n", "i", "x" }, "<C-a>", "<Esc>ggVG")
 vim.keymap.set("i", "<C-v>", "<Esc>Pa", { remap = true })
@@ -169,7 +165,15 @@ vim.keymap.set("x", "*", function()
 end, { noremap = true, silent = true })
 
 -- terminal
-vim.keymap.set("n", "<leader>t", ":terminal<CR>", { silent = true })
+Prev_terminal = -1
+vim.keymap.set("n", "<leader>T", ":terminal<CR>", { silent = true })
+vim.keymap.set("n", "<leader>t", function()
+	if Prev_terminal ~= -1 then
+		vim.api.nvim_set_current_buf(Prev_terminal)
+	else
+		vim.cmd("terminal", { silent = true })
+	end
+end, { silent = true })
 vim.keymap.set("t", "<S-Esc>", [[<C-\><C-n>]], { silent = true })
 vim.keymap.set("t", "<C-o>", [[<C-\><C-n>:b#<Cr>]], { silent = true })
 vim.api.nvim_create_autocmd({ "TermOpen", "BufEnter" }, {
@@ -177,6 +181,7 @@ vim.api.nvim_create_autocmd({ "TermOpen", "BufEnter" }, {
 	callback = function()
 		if vim.opt.buftype:get() == "terminal" then
 			vim.cmd("startinsert")
+			Prev_terminal = vim.api.nvim_get_current_buf()
 		end
 	end,
 })
@@ -652,6 +657,13 @@ require("lazy").setup({
 			"leath-dub/snipe.nvim",
 			event = "VeryLazy",
 			keys = {
+				{
+					"<leader>b",
+					function()
+						require("snipe").open_buffer_menu()
+					end,
+					desc = "Open Snipe buffer menu",
+				},
 				{
 					"<leader>s",
 					function()

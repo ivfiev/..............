@@ -54,3 +54,27 @@ export PATH=$PATH:$HOME/.ghcup/bin
 export EDITOR=nvim
 export SUDO_EDITOR=nvim
 alias vim=nvim
+
+
+alias _fzf="fzf --style=full --color='border:#009999,scrollbar:#006666,pointer:#009999,bg+:#002222,marker:#00aaaa,prompt:#00aaaa' --layout=reverse"
+
+ffv() {
+  local arg="${1:-d}"
+  if [ "$arg" = "d" ]; then
+    local dir=$(fd . -H --exclude .git --no-ignore -t d | _fzf --preview='tree -C {}') || return 0
+    [ -n "$dir" ] && nvim "$dir"
+  elif [ "$arg" = "f" ]; then
+    local file=$(_fzf -m --preview='bat --style=numbers --color=always {}') || return 0
+    [ -n "$file" ] && (echo "$file" | xargs nvim)
+  fi
+}
+alias ffvf='ffv f'
+ffh() {
+  local cmd=$(history 0 | tac | _fzf | sed 's/^[ 0-9]\+//') || return 0
+  [ -n $cmd ] && print -z -- $cmd
+}
+ffd() {
+  local arg="${1:-/home/$user}"
+  local dir=$(fd . -H --exclude .git --no-ignore -t d "$arg" | _fzf --preview='tree -C {}') || return 0
+  [ -n $dir ] && cd $dir
+}

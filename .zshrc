@@ -33,7 +33,7 @@ bindkey '\e[1;5D' backward-word
 bindkey '\e[1;5C' forward-word
 bindkey "^[[A" history-search-backward
 bindkey "^[[B" history-search-forward # ctrl+u, ctrl+a, ctrl+e
-bindkey '^X^E' edit-command-line
+bindkey '^Xe' edit-command-line
 
 zmodload zsh/complist
 
@@ -55,26 +55,40 @@ export EDITOR=nvim
 export SUDO_EDITOR=nvim
 alias vim=nvim
 
-
-alias _fzf="fzf --style=full --color='border:#009999,scrollbar:#006666,pointer:#009999,bg+:#002222,marker:#00aaaa,prompt:#00aaaa' --layout=reverse"
+export FZF_DEFAULT_OPTS="--style=full --color='border:#009999,scrollbar:#006666,pointer:#009999,bg+:#002222,marker:#00aaaa,prompt:#00aaaa' --layout=reverse"
 
 ffv() {
   local arg="${1:-d}"
   if [ "$arg" = "d" ]; then
-    local dir=$(fd . -H --exclude .git --no-ignore -t d | _fzf --preview='tree -C {}') || return 0
+    local dir=$(fd . -H --exclude .git --no-ignore -t d | fzf --preview='tree -C {}') || return 0
     [ -n "$dir" ] && nvim "$dir"
   elif [ "$arg" = "f" ]; then
-    local file=$(_fzf -m --preview='bat --style=numbers --color=always {}') || return 0
+    local file=$(fzf -m --preview='bat --style=numbers --color=always {}') || return 0
     [ -n "$file" ] && (echo "$file" | xargs nvim)
   fi
 }
 alias ffvf='ffv f'
 ffh() {
-  local cmd=$(history 0 | tac | _fzf | sed 's/^[ 0-9]\+//') || return 0
-  [ -n $cmd ] && print -z -- $cmd
+  local cmd=$(history 0 | tac | fzf | sed 's/^[ 0-9]\+//') || return 0
+  [ -n "$cmd" ] && print -z -- "$cmd"
 }
 ffd() {
-  local arg="${1:-/home/$user}"
-  local dir=$(fd . -H --exclude .git --no-ignore -t d "$arg" | _fzf --preview='tree -C {}') || return 0
-  [ -n $dir ] && cd $dir
+  local arg="${1:-/home/$USER}"
+  local dir="$(fd . -H --exclude .git --no-ignore -t d "$arg" | fzf --preview='tree -C {}')" || return 0
+  [ -n "$dir" ] && cd "$dir"
+}
+ffx() {
+  filename=$(fzf --preview-window=67% --preview="
+  if [[ -n {} ]]; then
+    f=\$(file {})
+    if [[ \"\$f\" == *image* ]]; then
+      cols=\$((\$COLUMNS / 3 * 2 - 3))
+      chafa -f symbols --symbols=all --colors=full -s \"\${cols}x44\" {} 2>/dev/null
+    elif [[ \"\$f\" == *text* ]]; then
+      bat --style=numbers --color=always {}
+    fi
+  fi")
+  if [ -n "$filename" ]; then 
+    cd "$(dirname "$filename")"
+  fi
 }

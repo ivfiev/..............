@@ -10,6 +10,7 @@ vim.opt.scrolloff = 5
 vim.opt.foldmethod = "indent"
 vim.opt.foldlevel = 99
 vim.opt.winborder = "single"
+vim.opt.shortmess:append("I")
 
 vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
@@ -31,6 +32,8 @@ vim.keymap.set({ "n", "x" }, "q", "<Nop>")
 vim.keymap.set("n", "<leader>q", "q") -- @ in v already works
 vim.keymap.set("n", "qi", "gi")
 vim.keymap.set("n", "qv", "gv")
+vim.keymap.set("n", "qr", ":%s///g | update", { silent = false })
+vim.keymap.set("n", "qR", ":cdo s///c | update", { silent = false }) -- cdo norm ...^[
 
 vim.keymap.set("n", "Q", function()
 	for _, win in ipairs(vim.api.nvim_list_wins()) do
@@ -79,7 +82,6 @@ vim.keymap.set({ "x" }, ">", ">gv")
 vim.keymap.set({ "x" }, "<", "<gv")
 
 vim.keymap.set({ "n", "i", "x" }, "<C-s>", "<Cmd>:w<CR><Esc>", { silent = true })
-vim.keymap.set({ "n", "i", "x" }, "<C-a>", "<Esc>ggVG")
 vim.keymap.set("i", "<C-v>", "<Esc>Pa", { remap = true })
 vim.keymap.set({ "x" }, "<C-c>", function()
 	vim.cmd('normal! "+y')
@@ -92,7 +94,7 @@ vim.keymap.set({ "n", "i" }, "<X1Mouse>", "<C-o>")
 vim.keymap.set({ "n", "i" }, "<X2Mouse>", "<C-i>")
 vim.keymap.set("n", "U", "<C-r>")
 vim.keymap.set("n", "<C-r>", "U") -- C-restore
-vim.keymap.set("i", "<C-BS>", "<Esc>vbs")
+vim.keymap.set("i", "<C-BS>", "<C-w>")
 
 vim.keymap.set({ "x", "n" }, "<C-u>", "<C-u>zz")
 vim.keymap.set({ "x", "n" }, "<C-d>", "<C-d>zz")
@@ -160,28 +162,37 @@ vim.keymap.set("n", "*", function()
 	if vim.opt.hlsearch:get() then
 		vim.opt.hlsearch = false
 	else
-		vim.cmd("normal! yiw")
-		local s = vim.fn.getreg('"')
+		vim.cmd('normal! "zyiw')
+		local s = vim.fn.getreg("z")
 		if s == nil or s == "" then
 			return
 		end
-		s = s:gsub("[\r\n]+$", "") -- drop trailine whitespace
+		s = s:gsub("[\r\n]+$", "") -- drop trailing whitespace
 		local pat = "\\V\\C" .. vim.fn.escape(s, "\\/") -- v-nomagic + case-sensitive
 		vim.opt.hlsearch = true
 		vim.fn.setreg("/", pat)
 	end
 end)
 vim.keymap.set("x", "*", function()
-	vim.cmd("normal! y") -- v -> "
-	local s = vim.fn.getreg('"')
+	vim.cmd('normal! "zy')
+	local s = vim.fn.getreg("z")
 	if s == nil or s == "" then
 		return
 	end
-	s = s:gsub("[\r\n]+$", "") -- drop trailine whitespace
+	s = s:gsub("[\r\n]+$", "") -- drop trailing whitespace
 	local pat = "\\V\\C" .. vim.fn.escape(s, "\\/") -- v-nomagic + case-sensitive
 	vim.opt.hlsearch = true
 	vim.fn.setreg("/", pat)
 end, { noremap = true, silent = true })
+vim.keymap.set("x", "/", function()
+	vim.cmd('normal! "zy')
+	local s = vim.fn.getreg("z")
+	if s == nil or s == "" then
+		return
+	end
+	s = s:gsub("[\r\n]+$", "") -- drop trailing whitespace
+	send_key("/" .. s, "n")
+end)
 
 -- terminal
 Prev_terminal = -1
@@ -302,6 +313,7 @@ require("lazy").setup({
 					end,
 					on_highlights = function(hl, c)
 						hl.CursorLine = { bg = "#001122" }
+						hl.CursorLineNr.fg = "#00CCCC"
 						hl.Visual = { bg = "#661166" }
 						hl.Search = { bg = hl.Visual.bg }
 						hl.IncSearch = { bg = hl.Visual.bg }
@@ -438,7 +450,6 @@ require("lazy").setup({
 
 				vim.keymap.set("n", "gb", builtin.buffers)
 				vim.keymap.set({ "n", "i" }, "<C-l>", builtin.buffers)
-
 				vim.keymap.set("n", "gB", function()
 					builtin.live_grep({ grep_open_files = true, prompt_title = "Live Grep (Buffers)" })
 				end)
@@ -446,6 +457,9 @@ require("lazy").setup({
 				vim.keymap.set("n", "gm", builtin.marks)
 
 				vim.keymap.set("n", "g<BS>", builtin.resume)
+
+				vim.api.nvim_set_hl(0, "TelescopePromptBorder", { fg = "#27a1b9" })
+				vim.api.nvim_set_hl(0, "TelescopePromptTitle", { fg = "#27a1b9" })
 			end,
 		},
 
@@ -540,15 +554,18 @@ require("lazy").setup({
 				local skip = function(event, kind, find)
 					return { filter = { event = event, kind = kind, find = find }, opts = { skip = true } }
 				end
+				local popup = function(event, kind, find)
+					return { filter = { event = event, kind = kind, find = find }, view = "popup" }
+				end
 				require("noice").setup({
 					routes = {
 						skip("msg_show", "", "B written"),
 						skip("notify", "info", "Roslyn"),
 						skip("msg_show", "lua_error", "lsp_status.lua:"),
-						{
-							filter = { event = "msg_show", kind = { "shell_out", "shell_err" } },
-							view = "notify",
-						},
+						popup("msg_show", { "shell_out", "shell_err" }),
+						popup("msg_show", nil, "mark line"),
+						popup("msg_show", nil, "cmd history"),
+						popup("msg_show", nil, "Type Name Content"),
 					},
 					presets = {
 						lsp_doc_border = true,
@@ -798,6 +815,8 @@ require("lazy").setup({
 						map("gIH", function()
 							vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
 						end, "Inlay hints")
+
+						map("<C-Space>", vim.lsp.buf.signature_help, "Sighelp", { "n", "i" })
 
 						-- Fuzzy find all the symbols in your current document.
 						map("gDs", telescope.lsp_document_symbols, "Open Document Symbols")

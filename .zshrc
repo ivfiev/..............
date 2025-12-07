@@ -55,7 +55,7 @@ export EDITOR=nvim
 export SUDO_EDITOR=nvim
 alias vim=nvim
 
-export FZF_DEFAULT_OPTS="--height=96% --style=full --color='border:#009999,scrollbar:#006666,pointer:#009999,bg+:#002222,marker:#00aaaa,prompt:#00aaaa' --layout=reverse"
+export FZF_DEFAULT_OPTS="--height=96% --style=full --color='border:#27a1b9,scrollbar:#27a1b9,pointer:#27a1b9,bg+:#002244,marker:#00cccc,prompt:#00cccc' --layout=reverse"
 
 ffh() {
   local cmd=$(history 0 | tac | fzf | sed 's/^[ 0-9]\+//') || return 0

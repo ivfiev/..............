@@ -1,5 +1,5 @@
 [mgr]
-ratio = [1, 2, 7]
+ratio = [0, 2, 10]
 show_hidden = true
 
 [preview]

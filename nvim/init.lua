@@ -26,6 +26,12 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.g.dotnet_show_project_file = false
 	end,
 })
+
+vim.keymap.set({ "n", "x" }, "q", "<Nop>")
+vim.keymap.set("n", "<leader>q", "q") -- @ in v already works
+vim.keymap.set("n", "qi", "gi")
+vim.keymap.set("n", "qv", "gv")
+
 vim.keymap.set("n", "Q", function()
 	for _, win in ipairs(vim.api.nvim_list_wins()) do
 		local buf = vim.api.nvim_win_get_buf(win)
@@ -90,6 +96,7 @@ vim.keymap.set("i", "<C-BS>", "<Esc>vbs")
 
 vim.keymap.set({ "x", "n" }, "<C-u>", "<C-u>zz")
 vim.keymap.set({ "x", "n" }, "<C-d>", "<C-d>zz")
+vim.keymap.set("n", "zz", "mz0zz`z")
 
 vim.api.nvim_set_hl(0, "OnYankHighlight", { bg = "#FF4400" })
 vim.api.nvim_create_autocmd("TextYankPost", {
@@ -150,7 +157,19 @@ end)
 
 -- highlighting
 vim.keymap.set("n", "*", function()
-	vim.opt.hlsearch = not vim.opt.hlsearch:get()
+	if vim.opt.hlsearch:get() then
+		vim.opt.hlsearch = false
+	else
+		vim.cmd("normal! yiw")
+		local s = vim.fn.getreg('"')
+		if s == nil or s == "" then
+			return
+		end
+		s = s:gsub("[\r\n]+$", "") -- drop trailine whitespace
+		local pat = "\\V\\C" .. vim.fn.escape(s, "\\/") -- v-nomagic + case-sensitive
+		vim.opt.hlsearch = true
+		vim.fn.setreg("/", pat)
+	end
 end)
 vim.keymap.set("x", "*", function()
 	vim.cmd("normal! y") -- v -> "
@@ -190,32 +209,54 @@ vim.api.nvim_create_autocmd({ "TermOpen", "BufEnter" }, {
 vim.keymap.set("n", "<leader>gb", function()
 	local file_path = vim.fn.expand("%:p")
 	local file_name = vim.fn.expand("%:t")
-	local line_num = vim.fn.line(".")
-	local cmd = { "git", "blame", "--line-porcelain", "-L", line_num .. "," .. line_num, "--", file_path }
-	local result = vim.fn.systemlist(cmd)
-	if vim.v.shell_error ~= 0 or #result == 0 then
-		vim.notify("No one to blame...", vim.log.levels.INFO)
-		return
-	end
-	local author, time, summary
-	for _, line in ipairs(result) do
-		if line:match("^author ") then
-			author = line:gsub("^author ", "")
-		elseif line:match("^author%-time ") then
-			time = os.date("%Y-%m-%d", tonumber(line:gsub("^author%-time ", ""), 10))
-		elseif line:match("^summary ") then
-			summary = line:gsub("^summary ", "")
+	local line_start = vim.fn.line("w0")
+	local line_end = vim.fn.line("w$")
+	local total_lines = vim.api.nvim_buf_line_count(0)
+	local function blame(line)
+		local cmd = { "git", "blame", "--line-porcelain", "-L", line .. "," .. line, "--", file_path }
+		local result = vim.fn.systemlist(cmd)
+		if vim.v.shell_error ~= 0 or #result == 0 then
+			virt_text("No one to blame...", line, 10000)
+			return
 		end
+		local author, time, summary
+		for _, line in ipairs(result) do
+			if line:match("^author ") then
+				author = line:gsub("^author ", "")
+			elseif line:match("^author%-time ") then
+				time = os.date("%Y-%m-%d", tonumber(line:gsub("^author%-time ", ""), 10))
+			elseif line:match("^summary ") then
+				summary = line:gsub("^summary ", "")
+			end
+		end
+		local msg =
+			-- string.format("%s:%s - [%s] @ [%s] -> [%s]  ", file_name, line_num, author or "?", time or "?", summary or "?")
+			string.format("[%s] @ [%s] -> [%s]", author or "?", time or "?", summary or "?")
+		virt_text(msg, line, 10000)
 	end
-	local msg =
-		string.format("%s:%s - [%s] @ [%s] -> [%s]  ", file_name, line_num, author or "?", time or "?", summary or "?")
-	vim.notify(msg, vim.log.levels.INFO, { title = "blame " }) -- TODO maybe virt text
+	for line = line_start + 2, line_end - 2 do
+		-- TODO: don't spawn git for each line
+		blame(line)
+	end
 end)
 
 vim.lsp.set_log_level("ERROR")
 
 function send_key(key, mode)
 	vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, false, true), mode, true)
+end
+
+function virt_text(text, line, timeout)
+	local ns = vim.api.nvim_create_namespace("virt_text " .. line)
+	timeout = timeout or 10000
+	vim.api.nvim_buf_set_extmark(0, ns, line - 1, 0, {
+		virt_text = { { text, "Comment" } },
+		virt_text_pos = "eol_right_align",
+		hl_mode = "combine",
+	})
+	vim.defer_fn(function()
+		vim.api.nvim_buf_clear_namespace(0, ns, 0, -1)
+	end, timeout)
 end
 
 -- setup lazy
@@ -337,13 +378,13 @@ require("lazy").setup({
 							},
 						},
 						path_display = { "truncate" },
-						layout_strategy = "flex",
+						layout_strategy = "vertical",
 						layout_config = {
-							prompt_position = "top",
-							width = 0.999,
-							height = 0.999,
+							prompt_position = "bottom",
+							width = 0.96,
+							height = 0.96,
 						},
-						sorting_strategy = "ascending",
+						sorting_strategy = "descending",
 						winblend = 0,
 					},
 					pickers = {
@@ -355,6 +396,16 @@ require("lazy").setup({
 							additional_args = function(_)
 								return { "--hidden", "--glob", "!.git/" }
 							end,
+						},
+						buffers = {
+							sort_mru = true,
+							ignore_current_buffer = true,
+							mappings = {
+								i = {
+									["<C-l>"] = actions.move_selection_next,
+									["<C-x>"] = actions.delete_buffer,
+								},
+							},
 						},
 					},
 					extensions = {
@@ -385,9 +436,9 @@ require("lazy").setup({
 
 				vim.keymap.set("n", "gs", builtin.lsp_dynamic_workspace_symbols)
 
-				vim.keymap.set("n", "gb", function()
-					builtin.buffers()
-				end)
+				vim.keymap.set("n", "gb", builtin.buffers)
+				vim.keymap.set({ "n", "i" }, "<C-l>", builtin.buffers)
+
 				vim.keymap.set("n", "gB", function()
 					builtin.live_grep({ grep_open_files = true, prompt_title = "Live Grep (Buffers)" })
 				end)
@@ -494,6 +545,10 @@ require("lazy").setup({
 						skip("msg_show", "", "B written"),
 						skip("notify", "info", "Roslyn"),
 						skip("msg_show", "lua_error", "lsp_status.lua:"),
+						{
+							filter = { event = "msg_show", kind = { "shell_out", "shell_err" } },
+							view = "notify",
+						},
 					},
 					presets = {
 						lsp_doc_border = true,
@@ -517,6 +572,20 @@ require("lazy").setup({
 							timeout = 10000,
 						},
 					},
+				})
+				vim.api.nvim_create_autocmd("RecordingEnter", {
+					callback = function()
+						local reg = vim.fn.reg_recording()
+						if reg ~= "" then
+							vim.notify("Recording @ '" .. reg .. "'", vim.log.levels.INFO, { Title = "Macro" })
+						end
+					end,
+				})
+				vim.api.nvim_create_autocmd("RecordingLeave", {
+					callback = function()
+						local reg = vim.fn.reg_recording()
+						vim.notify("Recorded @ '" .. reg .. "'", vim.log.levels.INFO, { Title = "Macro" })
+					end,
 				})
 			end,
 		},
@@ -654,46 +723,6 @@ require("lazy").setup({
 		},
 
 		{
-			"leath-dub/snipe.nvim",
-			event = "VeryLazy",
-			keys = {
-				{
-					"<leader>b",
-					function()
-						require("snipe").open_buffer_menu()
-					end,
-					desc = "Open Snipe buffer menu",
-				},
-				{
-					"<leader>s",
-					function()
-						require("snipe").open_buffer_menu()
-					end,
-					desc = "Open Snipe buffer menu",
-				},
-			},
-			opts = {
-				ui = {
-					position = "center",
-					persist_tags = false, -- did he fix it?
-					preselect_current = true,
-					open_win_override = {
-						title = "",
-					},
-				},
-				hints = {
-					dictionary = "abcdefghilmnopqrstuvwxyz",
-				},
-				sort = "last",
-			},
-			config = function(_, opts)
-				require("snipe").setup(opts)
-				local ns = vim.api.nvim_get_namespaces()["snipe"]
-				vim.api.nvim_set_hl(ns, "CursorLine", { bg = "#002244" })
-			end,
-		},
-
-		{
 			"lukas-reineke/indent-blankline.nvim",
 			main = "ibl",
 			config = function()
@@ -702,7 +731,7 @@ require("lazy").setup({
 				}
 				local hooks = require("ibl.hooks")
 				hooks.register(hooks.type.HIGHLIGHT_SETUP, function()
-					vim.api.nvim_set_hl(0, "c3", { fg = "#243648" })
+					vim.api.nvim_set_hl(0, "c3", { fg = "#182430" })
 				end)
 				require("ibl").setup({
 					indent = {
@@ -753,6 +782,7 @@ require("lazy").setup({
 					callback = function(event)
 						local map = function(keys, func, desc, mode)
 							mode = mode or "n"
+							desc = desc or ""
 							vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = "LSP: " .. desc })
 						end
 
@@ -767,7 +797,7 @@ require("lazy").setup({
 
 						map("gIH", function()
 							vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
-						end, "n")
+						end, "Inlay hints")
 
 						-- Fuzzy find all the symbols in your current document.
 						map("gDs", telescope.lsp_document_symbols, "Open Document Symbols")

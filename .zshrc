@@ -55,40 +55,44 @@ export EDITOR=nvim
 export SUDO_EDITOR=nvim
 alias vim=nvim
 
-export FZF_DEFAULT_OPTS="--style=full --color='border:#009999,scrollbar:#006666,pointer:#009999,bg+:#002222,marker:#00aaaa,prompt:#00aaaa' --layout=reverse"
+export FZF_DEFAULT_OPTS="--height=96% --style=full --color='border:#009999,scrollbar:#006666,pointer:#009999,bg+:#002222,marker:#00aaaa,prompt:#00aaaa' --layout=reverse"
 
-ffv() {
-  local arg="${1:-d}"
-  if [ "$arg" = "d" ]; then
-    local dir=$(fd . -H --exclude .git --no-ignore -t d | fzf --preview='tree -C {}') || return 0
-    [ -n "$dir" ] && nvim "$dir"
-  elif [ "$arg" = "f" ]; then
-    local file=$(fzf -m --preview='bat --style=numbers --color=always {}') || return 0
-    [ -n "$file" ] && (echo "$file" | xargs nvim)
-  fi
-}
-alias ffvf='ffv f'
 ffh() {
   local cmd=$(history 0 | tac | fzf | sed 's/^[ 0-9]\+//') || return 0
-  [ -n "$cmd" ] && print -z -- "$cmd"
+  if [[ -n "$cmd" ]]; then 
+    BUFFER+="$cmd"
+    CURSOR=$#BUFFER
+  fi
+  zle redisplay
 }
+zle -N ffh
+bindkey '^Fh' ffh
 ffd() {
-  local arg="${1:-/home/$USER}"
-  local dir="$(fd . -H --exclude .git --no-ignore -t d "$arg" | fzf --preview='tree -C {}')" || return 0
-  [ -n "$dir" ] && cd "$dir"
+  local dir="$(fd . -H --exclude .git --no-ignore -t d "/" | fzf -m --preview='tree -C {}')" || return 0
+  if [[ -n "$dir" ]]; then
+    BUFFER+=" ${dir//$'\n'/ }"
+  fi
+  zle redisplay
 }
-ffx() {
-  filename=$(fzf --preview-window=67% --preview="
+zle -N ffd
+bindkey '^Fd' ffd
+fff() {
+  local filename=$(fd . -H --exclude .git --no-ignore -t f | fzf -m --preview-window=67% --preview="
   if [[ -n {} ]]; then
-    f=\$(file {})
-    if [[ \"\$f\" == *image* ]]; then
+    f=\$(file -b {})
+    if [[ \"\$f\" == *\" image\"* ]]; then
       cols=\$((\$COLUMNS / 3 * 2 - 3))
       chafa -f symbols --symbols=all --colors=full -s \"\${cols}x44\" {} 2>/dev/null
-    elif [[ \"\$f\" == *text* ]]; then
+    elif [[ \"\$f\" == *\" text\"* ]]; then
       bat --style=numbers --color=always {}
+    else
+      echo \"\$f\"
     fi
   fi")
   if [ -n "$filename" ]; then 
-    cd "$(dirname "$filename")"
+    BUFFER+=" ${filename//$'\n'/ }"
   fi
+  zle redisplay
 }
+zle -N fff
+bindkey '^Ff' fff

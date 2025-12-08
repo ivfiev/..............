@@ -261,8 +261,10 @@ vim.keymap.set("n", "<leader>gb", function()
 	end
 	vim.b.blame_on = true
 end)
+
 vim.lsp.set_log_level("ERROR")
 
+-- general
 function send_key(key, mode)
 	vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, false, true), mode, true)
 end
@@ -280,9 +282,26 @@ function virt_text(toggle, ns, text, line, hl)
 	end
 end
 
+function keymap_override(mode, lhs, rhs, previous)
+	local original = vim.fn.maparg(lhs, mode)
+	if original == "" then
+		original = lhs
+	end
+	table.insert(previous, { mode = mode, lhs = lhs, rhs = original })
+	vim.keymap.set(mode, lhs, rhs)
+end
+
+function keymap_restore(previous)
+	print(vim.inspect(previous))
+	for i, map in ipairs(previous) do
+		vim.keymap.set(map.mode, map.lhs, map.rhs)
+		previous[i] = nil
+	end
+end
+
 -- setup lazy
-IS_WORK = vim.loop.os_uname().sysname == "Darwin"
-print("IS_WORK:" .. tostring(IS_WORK))
+IS_WORK = vim.loop.os_uname().sysname ~= "Linux"
+print("IS_WORK: " .. tostring(IS_WORK))
 
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
@@ -1282,7 +1301,6 @@ require("lazy").setup({
 		-- end
 		-- 	end,
 		--
-
 		-- },
 		-- {
 		-- 	"Cliffback/netcoredbg-macOS-arm64.nvim",

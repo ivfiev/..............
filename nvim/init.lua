@@ -195,11 +195,11 @@ vim.keymap.set("x", "/", function()
 end)
 
 -- terminal
-Prev_terminal = -1
+PREV_TERMINAL = -1
 vim.keymap.set("n", "<leader>T", ":terminal<CR>", { silent = true })
 vim.keymap.set("n", "<leader>t", function()
-	if Prev_terminal ~= -1 then
-		vim.api.nvim_set_current_buf(Prev_terminal)
+	if PREV_TERMINAL ~= -1 then
+		vim.api.nvim_set_current_buf(PREV_TERMINAL)
 	else
 		vim.cmd("terminal", { silent = true })
 	end
@@ -211,66 +211,79 @@ vim.api.nvim_create_autocmd({ "TermOpen", "BufEnter" }, {
 	callback = function()
 		if vim.opt.buftype:get() == "terminal" then
 			vim.cmd("startinsert")
-			Prev_terminal = vim.api.nvim_get_current_buf()
+			PREV_TERMINAL = vim.api.nvim_get_current_buf()
 		end
 	end,
 })
 
 -- git blame
+BLAME_NS = vim.api.nvim_create_namespace("virt_text_blame")
 vim.keymap.set("n", "<leader>gb", function()
+	if vim.b.blame_on then
+		virt_text("clear_all", BLAME_NS)
+		vim.b.blame_on = false
+		return
+	end
+	vim.cmd("update")
 	local file_path = vim.fn.expand("%:p")
-	local file_name = vim.fn.expand("%:t")
-	local line_start = vim.fn.line("w0")
-	local line_end = vim.fn.line("w$")
-	local total_lines = vim.api.nvim_buf_line_count(0)
-	local function blame(line)
-		local cmd = { "git", "blame", "--line-porcelain", "-L", line .. "," .. line, "--", file_path }
-		local result = vim.fn.systemlist(cmd)
-		if vim.v.shell_error ~= 0 or #result == 0 then
-			virt_text("No one to blame...", line, 10000)
-			return
-		end
-		local author, time, summary
-		for _, line in ipairs(result) do
-			if line:match("^author ") then
-				author = line:gsub("^author ", "")
-			elseif line:match("^author%-time ") then
-				time = os.date("%Y-%m-%d", tonumber(line:gsub("^author%-time ", ""), 10))
-			elseif line:match("^summary ") then
-				summary = line:gsub("^summary ", "")
+	local line_start = 1
+	local line_end = vim.api.nvim_buf_line_count(0)
+	local cmd = { "git", "blame", "--line-porcelain", "-L", line_start .. "," .. line_end, "--", file_path }
+	local result = vim.fn.systemlist(cmd)
+	if vim.v.shell_error ~= 0 or #result == 0 then
+		vim.notify("Can't blame...", vim.log.levels.ERROR, { Title = "blame" })
+		return
+	end
+	local entries = {}
+	local current = 0
+	for _, line in ipairs(result) do
+		if line:match("^author ") then
+			table.insert(entries, {})
+			current = current + 1
+			entries[current].author = line:gsub("^author ", "")
+		elseif line:match("^author%-time ") then
+			entries[current].time = os.date("%Y-%m-%d", tonumber(line:gsub("^author%-time ", ""), 10))
+		elseif line:match("^summary ") then
+			entries[current].summary = line:gsub("^summary ", "")
+			if #entries[current].summary > 40 then
+				entries[current].summary = entries[current].summary:sub(1, 40):gsub("[\r\n ]+$", "") .. ".."
 			end
 		end
-		local msg =
-			-- string.format("%s:%s - [%s] @ [%s] -> [%s]  ", file_name, line_num, author or "?", time or "?", summary or "?")
-			string.format("[%s] @ [%s] -> [%s]", author or "?", time or "?", summary or "?")
-		virt_text(msg, line, 10000)
 	end
-	for line = line_start + 2, line_end - 2 do
-		-- TODO: don't spawn git for each line
-		blame(line)
+	for line = line_start, line_end do
+		local msg = string.format(
+			"%s [%s@%s]",
+			entries[line].author ~= "Not Committed Yet" and entries[line].summary or "?",
+			entries[line].author or "?",
+			entries[line].time or "?"
+		)
+		virt_text("show_line", BLAME_NS, msg, line)
 	end
+	vim.b.blame_on = true
 end)
-
 vim.lsp.set_log_level("ERROR")
 
 function send_key(key, mode)
 	vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, false, true), mode, true)
 end
 
-function virt_text(text, line, timeout)
-	local ns = vim.api.nvim_create_namespace("virt_text " .. line)
-	timeout = timeout or 10000
-	vim.api.nvim_buf_set_extmark(0, ns, line - 1, 0, {
-		virt_text = { { text, "Comment" } },
-		virt_text_pos = "eol_right_align",
-		hl_mode = "combine",
-	})
-	vim.defer_fn(function()
+function virt_text(toggle, ns, text, line, hl)
+	if toggle == "show_line" then
+		hl = hl or "Comment"
+		vim.api.nvim_buf_set_extmark(0, ns, line - 1, 0, {
+			virt_text = { { text, hl } },
+			virt_text_pos = "eol_right_align",
+			hl_mode = "combine",
+		})
+	elseif toggle == "clear_all" then
 		vim.api.nvim_buf_clear_namespace(0, ns, 0, -1)
-	end, timeout)
+	end
 end
 
 -- setup lazy
+IS_WORK = vim.loop.os_uname().sysname == "Darwin"
+print("IS_WORK:" .. tostring(IS_WORK))
+
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
 	local lazyrepo = "https://github.com/folke/lazy.nvim.git"
@@ -414,7 +427,6 @@ require("lazy").setup({
 							ignore_current_buffer = true,
 							mappings = {
 								i = {
-									["<C-l>"] = actions.move_selection_next,
 									["<C-x>"] = actions.delete_buffer,
 								},
 							},
@@ -449,7 +461,6 @@ require("lazy").setup({
 				vim.keymap.set("n", "gs", builtin.lsp_dynamic_workspace_symbols)
 
 				vim.keymap.set("n", "gb", builtin.buffers)
-				vim.keymap.set({ "n", "i" }, "<C-l>", builtin.buffers)
 				vim.keymap.set("n", "gB", function()
 					builtin.live_grep({ grep_open_files = true, prompt_title = "Live Grep (Buffers)" })
 				end)
@@ -560,7 +571,6 @@ require("lazy").setup({
 				require("noice").setup({
 					routes = {
 						skip("msg_show", "", "B written"),
-						skip("notify", "info", "Roslyn"),
 						skip("msg_show", "lua_error", "lsp_status.lua:"),
 						popup("msg_show", { "shell_out", "shell_err" }),
 						popup("msg_show", nil, "mark line"),
@@ -763,12 +773,6 @@ require("lazy").setup({
 		},
 
 		{
-			"seblyng/roslyn.nvim",
-			opts = {},
-			ft = { "cs" }, -- work machine - load eager
-		},
-
-		{
 			"lewis6991/hover.nvim",
 			event = "VeryLazy",
 			config = function()
@@ -916,48 +920,51 @@ require("lazy").setup({
 						client.server_capabilities.documentRangeFormattingProvider = false
 					end,
 				})
-				vim.lsp.config("roslyn", {
-					capabilities = capabilities,
-					cmd = {
-						"dotnet",
-						os.getenv("HOME")
-							.. "/dev/roslyn/artifacts/bin/Microsoft.CodeAnalysis.LanguageServer/Release/net9.0/Microsoft.CodeAnalysis.LanguageServer.dll",
-						"--logLevel=Error",
-						"--extensionLogDirectory=/tmp/roslyn",
-						"--stdio",
-					},
-					settings = {
-						["csharp|background_analysis"] = {
-							dotnet_analyzer_diagnostics_scope = "openFiles",
-							dotnet_compiler_diagnostics_scope = "openFiles",
+
+				if IS_WORK then
+					vim.lsp.config("roslyn", {
+						capabilities = capabilities,
+						cmd = {
+							"dotnet",
+							os.getenv("HOME")
+								.. "/dev/roslyn/artifacts/bin/Microsoft.CodeAnalysis.LanguageServer/Release/net9.0/Microsoft.CodeAnalysis.LanguageServer.dll",
+							"--logLevel=Error",
+							"--extensionLogDirectory=/tmp/roslyn",
+							"--stdio",
 						},
-						["csharp|symbol_search"] = {
-							dotnet_search_reference_assemblies = true,
+						settings = {
+							["csharp|background_analysis"] = {
+								dotnet_analyzer_diagnostics_scope = "openFiles",
+								dotnet_compiler_diagnostics_scope = "openFiles",
+							},
+							["csharp|symbol_search"] = {
+								dotnet_search_reference_assemblies = true,
+							},
+							["csharp|completion"] = {
+								dotnet_show_name_completion_suggestions = true,
+								dotnet_show_completion_items_from_unimported_namespaces = true,
+								dotnet_provide_regex_completions = true,
+							},
+							["csharp|code_lens"] = {
+								dotnet_enable_references_code_lens = false,
+							},
+							["csharp|inlay_hints"] = {
+								csharp_enable_inlay_hints_for_implicit_object_creation = true,
+								csharp_enable_inlay_hints_for_implicit_variable_types = true,
+								csharp_enable_inlay_hints_for_lambda_parameter_types = true,
+								csharp_enable_inlay_hints_for_types = true,
+								dotnet_enable_inlay_hints_for_indexer_parameters = true,
+								dotnet_enable_inlay_hints_for_literal_parameters = true,
+								dotnet_enable_inlay_hints_for_object_creation_parameters = true,
+								dotnet_enable_inlay_hints_for_other_parameters = true,
+								dotnet_enable_inlay_hints_for_parameters = true,
+								dotnet_suppress_inlay_hints_for_parameters_that_differ_only_by_suffix = true,
+								dotnet_suppress_inlay_hints_for_parameters_that_match_argument_name = true,
+								dotnet_suppress_inlay_hints_for_parameters_that_match_method_intent = true,
+							},
 						},
-						["csharp|completion"] = {
-							dotnet_show_name_completion_suggestions = true,
-							dotnet_show_completion_items_from_unimported_namespaces = true,
-							dotnet_provide_regex_completions = true,
-						},
-						["csharp|code_lens"] = {
-							dotnet_enable_references_code_lens = false,
-						},
-						["csharp|inlay_hints"] = {
-							csharp_enable_inlay_hints_for_implicit_object_creation = true,
-							csharp_enable_inlay_hints_for_implicit_variable_types = true,
-							csharp_enable_inlay_hints_for_lambda_parameter_types = true,
-							csharp_enable_inlay_hints_for_types = true,
-							dotnet_enable_inlay_hints_for_indexer_parameters = true,
-							dotnet_enable_inlay_hints_for_literal_parameters = true,
-							dotnet_enable_inlay_hints_for_object_creation_parameters = true,
-							dotnet_enable_inlay_hints_for_other_parameters = true,
-							dotnet_enable_inlay_hints_for_parameters = true,
-							dotnet_suppress_inlay_hints_for_parameters_that_differ_only_by_suffix = true,
-							dotnet_suppress_inlay_hints_for_parameters_that_match_argument_name = true,
-							dotnet_suppress_inlay_hints_for_parameters_that_match_method_intent = true,
-						},
-					},
-				})
+					})
+				end
 
 				-- :Mason
 				-- require("mason-tool-installer").setup({ ensure_installed = { ... }})
@@ -1121,6 +1128,171 @@ require("lazy").setup({
 				},
 			},
 		},
+
+		-- dotnet shite
+		-- dotnet shite
+		-- dotnet shite
+		-- {
+		-- 	"seblyng/roslyn.nvim",
+		-- 	opts = {},
+		-- 	enabled = IS_WORK,
+		-- 	ft = { "cs" }, -- work machine - load eager
+		-- },
+		-- {
+		-- 	"GustavEikaas/easy-dotnet.nvim",
+		-- 	dependencies = { "nvim-lua/plenary.nvim", "nvim-telescope/telescope.nvim" },
+		-- 	enabled = IS_WORK,
+		-- 	ft = { "cs" },
+		-- 	config = function()
+		-- 		local dotnet = require("easy-dotnet")
+		-- 		dotnet.setup({
+		-- 			secrets = false,
+		-- 			lsp = {
+		-- 				enabled = false,
+		-- 				roslynator_enabled = false,
+		-- 			},
+		-- 			debugger = {
+		-- 				bin_path = "/Users/filips.ivanovs/.local/share/nvim/lazy/netcoredbg-macOS-arm64.nvim/netcoredbg/netcoredbg",
+		-- 			},
+		-- 		})
+		-- 	end,
+		-- },
+		-- {
+		-- 	"mfussenegger/nvim-dap",
+		-- 	enabled = IS_WORK,
+		-- 	ft = { "cs" },
+		-- 	config = function()
+		-- 		local dap = require("dap")
+		-- 		dap.set_log_level("TRACE")
+		-- 		dap.adapters.coreclr = {
+		-- 			type = "executable",
+		-- 			command = "/Users/filips.ivanovs/.local/share/nvim/mason/bin/netcoredbg",
+		-- 			args = { "--interpreter=vscode", "--engineLogging=/tmp/netcoredbg-engine.log" },
+		-- 		}
+		--
+		-- 		dap.configurations.cs = {
+		-- 			{
+		-- 				type = "coreclr",
+		-- 				name = "launch - coreclr",
+		-- 				request = "launch",
+		-- 				program = function()
+		-- 					return vim.fn.input("Path to dll", vim.fn.getcwd() .. "/bin/Debug/net8.0/", "file")
+		-- 				end,
+		-- 				cwd = vim.fn.getcwd(),
+		-- 				stopAtEntry = true,
+		-- 				justMyCode = true,
+		-- 				exceptionBreakpointFilters = {
+		-- 					{ filter = "all", label = "Break on all exceptions", enabled = true },
+		-- 				},
+		-- 			},
+		-- 		}
+		-- 	end,
+		-- },
+		-- {
+		-- 	"rcarriga/nvim-dap-ui",
+		-- 	enabled = IS_WORK,
+		-- 	ft = { "cs" },
+		-- 	dependencies = { "mfussenegger/nvim-dap", "nvim-neotest/nvim-nio" },
+		-- 	opts = {},
+		-- 	config = function(_, opts)
+		-- 		local dap = require("dap")
+		-- 		local dapui = require("dapui")
+		-- 		vim.fn.sign_define("DapBreakpoint", { text = "●", texthl = "DapBreakpoint" })
+		-- 		vim.fn.sign_define("DapBreakpointCondition", { text = "◆", texthl = "DapBreakpointCondition" })
+		-- 		vim.fn.sign_define("DapBreakpointRejected", { text = "✖", texthl = "DapBreakpointRejected" })
+		-- 		vim.fn.sign_define("DapStopped", { text = "➜", texthl = "DapStopped" })
+		--
+		-- 		vim.api.nvim_set_hl(0, "DapBreakpoint", { fg = "#e06c75" })
+		-- 		vim.api.nvim_set_hl(0, "DapBreakpointCondition", { fg = "#e5c07b" })
+		-- 		vim.api.nvim_set_hl(0, "DapBreakpointRejected", { fg = "#be5046" })
+		-- 		vim.api.nvim_set_hl(0, "DapStopped", { fg = "#98c379" })
+		--
+		-- 		vim.keymap.set("n", "<F5>", function()
+		-- 			dap.continue()
+		-- 		end, { desc = "Continue" })
+		-- 		vim.keymap.set("n", "<F2>", function()
+		-- 			dap.toggle_breakpoint()
+		-- 		end, { desc = "Toggle Breakpoint" })
+		--
+		-- 		vim.keymap.set("n", "<C-F2>", function()
+		-- 			dap.set_breakpoint(vim.fn.input("Condition: "))
+		-- 		end, { desc = "Conditional Breakpoint" })
+		-- 		vim.keymap.set("n", "<F10>", function()
+		-- 			dap.step_over()
+		-- 		end, { desc = "Step Over" })
+		--
+		-- 		vim.keymap.set("n", "<F11>", function()
+		-- 			dap.step_into()
+		-- 		end, { desc = "Step Into" })
+		--
+		-- 		vim.keymap.set("n", "<S-F11>", function()
+		-- 			dap.step_out()
+		-- 		end, { desc = "Step Out" })
+		--
+		-- 		vim.keymap.set("n", "<S-F5>", function()
+		-- 			dap.terminate()
+		-- 			dapui.close()
+		-- 		end, { desc = "Terminate" })
+		-- 		-- vim.keymap.set("n", "<leader>du", function()
+		-- 		--     dapui.toggle()
+		-- 		-- end, { desc = "Toggle DAP UI" })
+		-- 		vim.keymap.set({ "n", "v" }, "<F1>", function()
+		-- 			require("dapui").eval()
+		-- 			vim.schedule(function()
+		-- 				send_key("<C-w>w<CR>", "n")
+		-- 			end)
+		-- 		end, { desc = "Eval Expression" })
+		--
+		-- 		vim.keymap.set({ "n", "v" }, "<F7>", function()
+		-- 			require("dap").set_exception_breakpoints({ "all" })
+		-- 		end, { desc = "Eval Expression" })
+		--
+		-- 		require("dapui").setup({
+		-- 			icons = {
+		-- 				expanded = "▼",
+		-- 				collapsed = "▶",
+		-- 				current_frame = "▶",
+		-- 			},
+		-- 			controls = {
+		-- 				icons = {
+		-- 					pause = "⏸",
+		-- 					play = "▶",
+		-- 					step_into = "⤵",
+		-- 					step_over = "⤼",
+		-- 					step_out = "⤴",
+		-- 					step_back = "⏮",
+		-- 					run_last = "↺",
+		-- 					terminate = "⏹",
+		-- 				},
+		-- 			},
+		-- 		})
+		--
+		-- 		dap.listeners.after.event_initialized["on_start"] = function()
+		-- 			vim.defer_fn(function()
+		-- 				-- require("dap").set_exception_breakpoints({ "all" })
+		-- 			end, 100)
+		-- 			print("Debugger started!")
+		-- 		end
+		--
+		-- 		dap.listeners.before.event_terminated["on_end"] = function()
+		-- 			print("Debugger terminated.")
+		-- 		end
+		-- 	dap.listeners.before.event_exited["on_exit"] = function()
+		--   print("Target process exited.")
+		-- end
+		-- 	end,
+		--
+
+		-- },
+		-- {
+		-- 	"Cliffback/netcoredbg-macOS-arm64.nvim",
+		-- 	enabled = IS_WORK,
+		-- 	ft = { "cs" },
+		-- 	dependencies = { "mfussenegger/nvim-dap" },
+		-- 	config = function()
+		-- 		require("netcoredbg-macOS-arm64").setup(require("dap"))
+		-- 	end,
+		-- },
 	},
 
 	install = { colorscheme = { "habamax" } },

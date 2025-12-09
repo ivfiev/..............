@@ -32,8 +32,20 @@ vim.keymap.set({ "n", "x" }, "q", "<Nop>")
 vim.keymap.set("n", "<leader>q", "q") -- @ in v already works
 vim.keymap.set("n", "qi", "gi")
 vim.keymap.set("n", "qv", "gv")
-vim.keymap.set("n", "qr", ":%s///g | update", { silent = false })
-vim.keymap.set("n", "qR", ":cdo s///c | update", { silent = false }) -- cdo norm ...^[
+vim.keymap.set(
+	"n",
+	"qr",
+	":%s///g | update<Left><Left><Left><Left><Left><Left><Left><Left><Left><Left><Left><Left>",
+	{ silent = false }
+)
+vim.keymap.set(
+	"n",
+	"qR",
+	":cdo s///c | update<Left><Left><Left><Left><Left><Left><Left><Left><Left><Left><Left><Left>",
+	{ silent = false }
+)
+vim.keymap.set("n", "qd", ':cdo execute "norm! "<Left>', { silent = false }) --  <Esc> etc
+vim.keymap.set({ "n", "x" }, "<leader>jq", ':%! jq ""<Left>', { silent = false })
 
 vim.keymap.set("n", "Q", function()
 	for _, win in ipairs(vim.api.nvim_list_wins()) do
@@ -282,25 +294,62 @@ function virt_text(toggle, ns, text, line, hl)
 	end
 end
 
-function keymap_override(mode, lhs, rhs, previous)
-	local original = vim.fn.maparg(lhs, mode)
-	if original == "" then
-		original = lhs
+Remap = {}
+function Remap:new()
+	local remap = {}
+	return setmetatable(remap, { __index = Remap })
+end
+
+function Remap:override(mode, lhs, rhs)
+	local original = vim.fn.maparg(lhs, mode, nil, true)
+	if original == nil or original == "" or original.rhs == "" or original.rhs == nil then
+		table.insert(self, { mode = mode, lhs = lhs, none = true })
+	else
+		table.insert(self, {
+			mode = mode,
+			lhs = lhs,
+			rhs = original.rhs,
+			noremap = original.noremap == 1,
+			silent = original.silent == 1,
+			buffer = original.buffer == 1,
+		})
 	end
-	table.insert(previous, { mode = mode, lhs = lhs, rhs = original })
 	vim.keymap.set(mode, lhs, rhs)
 end
 
-function keymap_restore(previous)
-	print(vim.inspect(previous))
-	for i, map in ipairs(previous) do
-		vim.keymap.set(map.mode, map.lhs, map.rhs)
-		previous[i] = nil
+function Remap:restore()
+	for i, map in ipairs(self) do
+		if map.none then
+			vim.keymap.del(map.mode, map.lhs)
+		else
+			vim.keymap.set(
+				map.mode,
+				map.lhs,
+				map.rhs,
+				{ noremap = map.noremap, silent = map.silent, buffer = map.buffer }
+			)
+		end
+		self[i] = nil
+	end
+end
+
+Toggle = {}
+function Toggle:new(initial, t, f)
+	local toggle = { value = initial, t = t, f = f }
+	return setmetatable(toggle, { __index = Toggle })
+end
+function Toggle:toggle()
+	if self.value then
+		self.t()
+		self.value = false
+	else
+		self.f()
+		self.value = true
 	end
 end
 
 -- setup lazy
-IS_WORK = vim.loop.os_uname().sysname ~= "Linux"
+IS_WORK = vim.loop.os_uname().sysname == "Darwin"
 print("IS_WORK: " .. tostring(IS_WORK))
 
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -361,6 +410,17 @@ require("lazy").setup({
 						hl.FlashCurrent = { bg = "#006666", fg = "#111111", bold = false }
 						hl.FlashMatch = { bg = "#006666", fg = "#111111", bold = false }
 						hl.FlashLabel = { bg = "#880088", fg = "#FAFAFA", bold = true }
+						hl.Include = { fg = c.purple, italic = true }
+						vim.defer_fn(function()
+							local function tweak(hl_name, f)
+								local highlight = vim.api.nvim_get_hl(0, { name = hl_name, link = false })
+								f(highlight)
+								vim.api.nvim_set_hl(0, hl_name, highlight)
+							end
+							tweak("@keyword", function(h)
+								h.italic = false
+							end)
+						end, 100)
 					end,
 				})
 				vim.cmd([[colorscheme tokyonight-night]])
@@ -1148,169 +1208,207 @@ require("lazy").setup({
 			},
 		},
 
-		-- dotnet shite
-		-- dotnet shite
-		-- dotnet shite
-		-- {
-		-- 	"seblyng/roslyn.nvim",
-		-- 	opts = {},
-		-- 	enabled = IS_WORK,
-		-- 	ft = { "cs" }, -- work machine - load eager
-		-- },
-		-- {
-		-- 	"GustavEikaas/easy-dotnet.nvim",
-		-- 	dependencies = { "nvim-lua/plenary.nvim", "nvim-telescope/telescope.nvim" },
-		-- 	enabled = IS_WORK,
-		-- 	ft = { "cs" },
-		-- 	config = function()
-		-- 		local dotnet = require("easy-dotnet")
-		-- 		dotnet.setup({
-		-- 			secrets = false,
-		-- 			lsp = {
-		-- 				enabled = false,
-		-- 				roslynator_enabled = false,
-		-- 			},
-		-- 			debugger = {
-		-- 				bin_path = "/Users/filips.ivanovs/.local/share/nvim/lazy/netcoredbg-macOS-arm64.nvim/netcoredbg/netcoredbg",
-		-- 			},
-		-- 		})
-		-- 	end,
-		-- },
-		-- {
-		-- 	"mfussenegger/nvim-dap",
-		-- 	enabled = IS_WORK,
-		-- 	ft = { "cs" },
-		-- 	config = function()
-		-- 		local dap = require("dap")
-		-- 		dap.set_log_level("TRACE")
-		-- 		dap.adapters.coreclr = {
-		-- 			type = "executable",
-		-- 			command = "/Users/filips.ivanovs/.local/share/nvim/mason/bin/netcoredbg",
-		-- 			args = { "--interpreter=vscode", "--engineLogging=/tmp/netcoredbg-engine.log" },
-		-- 		}
 		--
-		-- 		dap.configurations.cs = {
-		-- 			{
-		-- 				type = "coreclr",
-		-- 				name = "launch - coreclr",
-		-- 				request = "launch",
-		-- 				program = function()
-		-- 					return vim.fn.input("Path to dll", vim.fn.getcwd() .. "/bin/Debug/net8.0/", "file")
-		-- 				end,
-		-- 				cwd = vim.fn.getcwd(),
-		-- 				stopAtEntry = true,
-		-- 				justMyCode = true,
-		-- 				exceptionBreakpointFilters = {
-		-- 					{ filter = "all", label = "Break on all exceptions", enabled = true },
-		-- 				},
-		-- 			},
-		-- 		}
-		-- 	end,
-		-- },
-		-- {
-		-- 	"rcarriga/nvim-dap-ui",
-		-- 	enabled = IS_WORK,
-		-- 	ft = { "cs" },
-		-- 	dependencies = { "mfussenegger/nvim-dap", "nvim-neotest/nvim-nio" },
-		-- 	opts = {},
-		-- 	config = function(_, opts)
-		-- 		local dap = require("dap")
-		-- 		local dapui = require("dapui")
-		-- 		vim.fn.sign_define("DapBreakpoint", { text = "●", texthl = "DapBreakpoint" })
-		-- 		vim.fn.sign_define("DapBreakpointCondition", { text = "◆", texthl = "DapBreakpointCondition" })
-		-- 		vim.fn.sign_define("DapBreakpointRejected", { text = "✖", texthl = "DapBreakpointRejected" })
-		-- 		vim.fn.sign_define("DapStopped", { text = "➜", texthl = "DapStopped" })
 		--
-		-- 		vim.api.nvim_set_hl(0, "DapBreakpoint", { fg = "#e06c75" })
-		-- 		vim.api.nvim_set_hl(0, "DapBreakpointCondition", { fg = "#e5c07b" })
-		-- 		vim.api.nvim_set_hl(0, "DapBreakpointRejected", { fg = "#be5046" })
-		-- 		vim.api.nvim_set_hl(0, "DapStopped", { fg = "#98c379" })
 		--
-		-- 		vim.keymap.set("n", "<F5>", function()
-		-- 			dap.continue()
-		-- 		end, { desc = "Continue" })
-		-- 		vim.keymap.set("n", "<F2>", function()
-		-- 			dap.toggle_breakpoint()
-		-- 		end, { desc = "Toggle Breakpoint" })
-		--
-		-- 		vim.keymap.set("n", "<C-F2>", function()
-		-- 			dap.set_breakpoint(vim.fn.input("Condition: "))
-		-- 		end, { desc = "Conditional Breakpoint" })
-		-- 		vim.keymap.set("n", "<F10>", function()
-		-- 			dap.step_over()
-		-- 		end, { desc = "Step Over" })
-		--
-		-- 		vim.keymap.set("n", "<F11>", function()
-		-- 			dap.step_into()
-		-- 		end, { desc = "Step Into" })
-		--
-		-- 		vim.keymap.set("n", "<S-F11>", function()
-		-- 			dap.step_out()
-		-- 		end, { desc = "Step Out" })
-		--
-		-- 		vim.keymap.set("n", "<S-F5>", function()
-		-- 			dap.terminate()
-		-- 			dapui.close()
-		-- 		end, { desc = "Terminate" })
-		-- 		-- vim.keymap.set("n", "<leader>du", function()
-		-- 		--     dapui.toggle()
-		-- 		-- end, { desc = "Toggle DAP UI" })
-		-- 		vim.keymap.set({ "n", "v" }, "<F1>", function()
-		-- 			require("dapui").eval()
-		-- 			vim.schedule(function()
-		-- 				send_key("<C-w>w<CR>", "n")
-		-- 			end)
-		-- 		end, { desc = "Eval Expression" })
-		--
-		-- 		vim.keymap.set({ "n", "v" }, "<F7>", function()
-		-- 			require("dap").set_exception_breakpoints({ "all" })
-		-- 		end, { desc = "Eval Expression" })
-		--
-		-- 		require("dapui").setup({
-		-- 			icons = {
-		-- 				expanded = "▼",
-		-- 				collapsed = "▶",
-		-- 				current_frame = "▶",
-		-- 			},
-		-- 			controls = {
-		-- 				icons = {
-		-- 					pause = "⏸",
-		-- 					play = "▶",
-		-- 					step_into = "⤵",
-		-- 					step_over = "⤼",
-		-- 					step_out = "⤴",
-		-- 					step_back = "⏮",
-		-- 					run_last = "↺",
-		-- 					terminate = "⏹",
-		-- 				},
-		-- 			},
-		-- 		})
-		--
-		-- 		dap.listeners.after.event_initialized["on_start"] = function()
-		-- 			vim.defer_fn(function()
-		-- 				-- require("dap").set_exception_breakpoints({ "all" })
-		-- 			end, 100)
-		-- 			print("Debugger started!")
-		-- 		end
-		--
-		-- 		dap.listeners.before.event_terminated["on_end"] = function()
-		-- 			print("Debugger terminated.")
-		-- 		end
-		-- 	dap.listeners.before.event_exited["on_exit"] = function()
-		--   print("Target process exited.")
-		-- end
-		-- 	end,
-		--
-		-- },
-		-- {
-		-- 	"Cliffback/netcoredbg-macOS-arm64.nvim",
-		-- 	enabled = IS_WORK,
-		-- 	ft = { "cs" },
-		-- 	dependencies = { "mfussenegger/nvim-dap" },
-		-- 	config = function()
-		-- 		require("netcoredbg-macOS-arm64").setup(require("dap"))
-		-- 	end,
-		-- },
+		{
+			"seblyng/roslyn.nvim",
+			opts = {},
+			enabled = IS_WORK,
+			ft = { "cs" },
+		},
+		{
+			"GustavEikaas/easy-dotnet.nvim",
+			dependencies = { "nvim-lua/plenary.nvim", "nvim-telescope/telescope.nvim" },
+			enabled = IS_WORK,
+			ft = { "cs" },
+			config = function()
+				local dotnet = require("easy-dotnet")
+				dotnet.setup({
+					secrets = false,
+					lsp = {
+						enabled = false,
+						roslynator_enabled = false,
+					},
+					debugger = {
+						bin_path = "/Users/filips.ivanovs/.local/share/nvim/lazy/netcoredbg-macOS-arm64.nvim/netcoredbg/netcoredbg",
+						mappings = {
+							open_variable_viewer = { lhs = "V", desc = "open variable viewer" },
+						},
+					},
+					test_runner = {
+						mappings = {
+							run_test_from_buffer = { lhs = "<leader>dr", desc = "run test from buffer" },
+							debug_test = { lhs = "<leader>dd", desc = "debug test" },
+							peek_stack_trace_from_buffer = { lhs = "<leader>p", desc = "peek stack trace from buffer" },
+							filter_failed_tests = { lhs = "<leader>fe", desc = "filter failed tests" },
+							go_to_file = { lhs = "g", desc = "go to file" },
+							run_all = { lhs = "<leader>R", desc = "run all tests" },
+							run = { lhs = "<leader>r", desc = "run test" },
+							peek_stacktrace = { lhs = "<leader>p", desc = "peek stacktrace of failed test" },
+							expand = { lhs = "o", desc = "expand" },
+							expand_node = { lhs = "E", desc = "expand node" },
+							expand_all = { lhs = "-", desc = "expand all" },
+							collapse_all = { lhs = "W", desc = "collapse all" },
+							close = { lhs = "q", desc = "close testrunner" },
+							refresh_testrunner = { lhs = "<C-r>", desc = "refresh testrunner" },
+						},
+					},
+				})
+				vim.keymap.set("n", "<leader>DR", ":Dotnet testrunner<CR>", { silent = true })
+				vim.keymap.set("n", "<leader>DB", ":Dotnet build<CR>", { silent = true })
+				vim.keymap.set("n", "<leader>DD", ":Dotnet debug<CR>", { silent = true })
+			end,
+		},
+		{
+			"mfussenegger/nvim-dap",
+			enabled = IS_WORK,
+			ft = { "cs" },
+			config = function()
+				local dap = require("dap")
+				dap.set_log_level("TRACE")
+				dap.adapters.coreclr = {
+					type = "executable",
+					command = "/Users/filips.ivanovs/.local/share/nvim/mason/bin/netcoredbg",
+					args = { "--interpreter=vscode", "--engineLogging=/tmp/netcoredbg-engine.log" },
+				}
+
+				dap.configurations.cs = {
+					{
+						type = "coreclr",
+						name = "launch - coreclr",
+						request = "launch",
+						program = function()
+							return vim.fn.input("Path to dll", vim.fn.getcwd() .. "/bin/Debug/net8.0/", "file")
+						end,
+						cwd = vim.fn.getcwd(),
+						stopAtEntry = true,
+						justMyCode = true,
+						exceptionBreakpointFilters = {
+							{ filter = "all", label = "Break on all exceptions", enabled = true },
+						},
+					},
+				}
+			end,
+		},
+		{
+			"rcarriga/nvim-dap-ui",
+			enabled = IS_WORK,
+			ft = { "cs" },
+			dependencies = { "mfussenegger/nvim-dap", "nvim-neotest/nvim-nio" },
+			opts = {},
+			config = function(_, opts)
+				local dap = require("dap")
+				local dapui = require("dapui")
+				vim.fn.sign_define("DapBreakpoint", { text = "●", texthl = "DapBreakpoint" })
+				vim.fn.sign_define("DapBreakpointCondition", { text = "◆", texthl = "DapBreakpointCondition" })
+				vim.fn.sign_define("DapBreakpointRejected", { text = "✖", texthl = "DapBreakpointRejected" })
+				vim.fn.sign_define("DapStopped", { text = "➜", texthl = "DapStopped", linehl = "DapStoppedLine" })
+
+				vim.api.nvim_set_hl(0, "DapBreakpoint", { fg = "#e06c75" })
+				vim.api.nvim_set_hl(0, "DapBreakpointCondition", { fg = "#e5c07b" })
+				vim.api.nvim_set_hl(0, "DapBreakpointRejected", { fg = "#be5046" })
+				vim.api.nvim_set_hl(0, "DapStopped", { fg = "#98c379" })
+				vim.api.nvim_set_hl(0, "DapStoppedLine", { bg = "#002244" })
+
+				vim.keymap.set("n", "<F5>", dap.continue)
+				vim.keymap.set("n", "<F2>", dap.toggle_breakpoint)
+				vim.keymap.set("n", "<C-F2>", dap.set_breakpoint(vim.fn.input("Condition: ")))
+				vim.keymap.set("n", "<F10>", dap.step_over)
+				vim.keymap.set("n", "<F11>", dap.step_into)
+				vim.keymap.set("n", "<S-F11>", dap.step_out)
+				vim.keymap.set("n", "<S-F5>", function()
+					dap.terminate()
+					dapui.close()
+				end)
+				-- vim.keymap.set("n", "<leader>du", function()
+				--     dapui.toggle()
+				-- end, { desc = "Toggle DAP UI" })
+
+				local widgets = require("dap.ui.widgets")
+				vim.keymap.set("n", "<leader>dv", function()
+					widgets.centered_float(widgets.scopes) -- just current frame scopes
+				end, { desc = "DAP: show scopes for current frame ONLY" })
+
+				vim.keymap.set({ "n", "v" }, "<F1>", function()
+					require("dapui").eval()
+					vim.schedule(function()
+						send_key("<C-w>w<CR>", "n")
+					end)
+				end)
+
+				dapui.setup({
+					icons = {
+						expanded = "▼",
+						collapsed = "▶",
+						current_frame = "▶",
+					},
+					controls = {
+						icons = {
+							pause = "⏸",
+							play = "▶",
+							step_into = "⤵",
+							step_over = "⤼",
+							step_out = "⤴",
+							step_back = "⏮",
+							run_last = "↺",
+							terminate = "⏹",
+						},
+					},
+				})
+
+				local exns = Toggle:new(false, function()
+					require("dap").set_exception_breakpoints({})
+					vim.notify("Exceptions off", vim.log.levels.INFO)
+				end, function()
+					require("dap").set_exception_breakpoints({ "all" })
+					vim.notify("Exceptions on", vim.log.levels.INFO)
+				end)
+
+				local remaps = Remap:new()
+
+				dap.listeners.after.event_initialized["on_start"] = function()
+					print("Debugger started!")
+					remaps:override("n", "n", dap.step_over)
+					remaps:override("n", "N", dap.step_into)
+					remaps:override("n", "<C-n>", dap.continue)
+					remaps:override("n", "<BS>", dap.step_out)
+					remaps:override("n", "b", dap.toggle_breakpoint)
+					remaps:override("n", "i", function()
+						require("dapui").eval()
+						vim.schedule(function()
+							send_key("<C-w>w<CR>", "n")
+						end)
+					end)
+					remaps:override("n", "e", function()
+						exns:toggle()
+					end)
+					remaps:override("n", "X", function()
+						dap.terminate()
+						dapui.close()
+					end)
+				end
+
+				dap.listeners.before.event_terminated["on_end"] = function()
+					print("Debugger terminated.")
+					remaps:restore()
+				end
+
+				dap.listeners.before.event_exited["on_exit"] = function()
+					print("Target process exited.")
+					remaps:restore()
+				end
+			end,
+		},
+	},
+	{
+		"Cliffback/netcoredbg-macOS-arm64.nvim",
+		enabled = IS_WORK,
+		ft = { "cs" },
+		dependencies = { "mfussenegger/nvim-dap" },
+		config = function()
+			require("netcoredbg-macOS-arm64").setup(require("dap"))
+		end,
 	},
 
 	install = { colorscheme = { "habamax" } },

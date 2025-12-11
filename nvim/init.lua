@@ -11,6 +11,8 @@ vim.opt.foldmethod = "indent"
 vim.opt.foldlevel = 99
 vim.opt.winborder = "single"
 vim.opt.shortmess:append("I")
+vim.opt.showtabline = 0
+vim.opt.laststatus = 3
 
 vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
@@ -104,6 +106,13 @@ vim.keymap.set({ "x" }, "P", '"_dP')
 vim.keymap.set({ "n", "i", "x" }, "<C-0>", "<C-v>")
 vim.keymap.set({ "n", "i" }, "<X1Mouse>", "<C-o>")
 vim.keymap.set({ "n", "i" }, "<X2Mouse>", "<C-i>")
+vim.keymap.set({ "n", "x" }, "]t", "gt")
+vim.keymap.set({ "n", "x" }, "[t", "gT")
+vim.keymap.set({ "n", "x" }, "<Tab>", "gt")
+vim.keymap.set({ "n", "x" }, "<S-Tab>", "gT")
+vim.keymap.set({ "n", "x" }, "<leader><Tab>", ":tabnew<CR>", { silent = true })
+vim.keymap.set("t", "<Tab>", [[<C-\><C-n>gt]])
+vim.keymap.set("t", "<S-Tab>", [[<C-\><C-n>gT]])
 vim.keymap.set("n", "U", "<C-r>")
 vim.keymap.set("n", "<C-r>", "U") -- C-restore
 vim.keymap.set("i", "<C-BS>", "<C-w>")
@@ -150,24 +159,22 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
 	end,
 })
 
--- marks
+-- marks (local disabled)
 vim.keymap.set("n", "M", function()
 	local mark = vim.fn.getcharstr()
 	vim.cmd("normal! m" .. string.upper(mark))
 end)
 vim.keymap.set("n", "'", function()
 	local mark = vim.fn.getcharstr()
-	vim.cmd("normal! '" .. string.upper(mark))
-	vim.cmd("normal! g'\"")
+	if tonumber(mark) ~= nil then
+		vim.cmd("normal! " .. mark .. "gt")
+	else
+		vim.cmd("normal! '" .. string.upper(mark))
+		vim.cmd("normal! g'\"")
+	end
 end)
-vim.keymap.set("n", "MM", function()
-	local mark = vim.fn.getcharstr()
-	vim.cmd("normal! m" .. string.lower(mark))
-end)
-vim.keymap.set("n", "''", function()
-	local mark = vim.fn.getcharstr()
-	vim.cmd("normal! '" .. string.lower(mark))
-end)
+vim.keymap.set("n", "<leader>m", "m")
+vim.keymap.set("n", "<leader>'", "'")
 
 -- highlighting
 vim.keymap.set("n", "*", function()
@@ -218,7 +225,7 @@ vim.keymap.set("n", "<leader>t", function()
 end, { silent = true })
 vim.keymap.set("t", "<S-Esc>", [[<C-\><C-n>]], { silent = true })
 vim.keymap.set("t", "<C-o>", [[<C-\><C-n>:b#<Cr>]], { silent = true })
-vim.api.nvim_create_autocmd({ "TermOpen", "BufEnter" }, {
+vim.api.nvim_create_autocmd({ "TermOpen", "BufEnter", "TabEnter" }, {
 	pattern = "*",
 	callback = function()
 		if vim.opt.buftype:get() == "terminal" then
@@ -411,6 +418,9 @@ require("lazy").setup({
 						hl.FlashMatch = { bg = "#006666", fg = "#111111", bold = false }
 						hl.FlashLabel = { bg = "#880088", fg = "#FAFAFA", bold = true }
 						hl.Include = { fg = c.purple, italic = true }
+						hl.TabLine = { fg = hl.LineNr.fg, bg = "NONE" }
+						hl.TabLineFill = { bg = BG }
+						hl.TabLineSel = { fg = hl.CursorLineNr.fg, bold = true, bg = "NONE" }
 						vim.defer_fn(function()
 							local function tweak(hl_name, f)
 								local highlight = vim.api.nvim_get_hl(0, { name = hl_name, link = false })
@@ -479,6 +489,7 @@ require("lazy").setup({
 						mappings = {
 							i = {
 								["<Esc>"] = actions.close,
+								["<Tab>"] = actions.select_tab,
 							},
 						},
 						path_display = { "truncate" },
@@ -539,7 +550,11 @@ require("lazy").setup({
 
 				vim.keymap.set("n", "gs", builtin.lsp_dynamic_workspace_symbols)
 
-				vim.keymap.set("n", "gb", builtin.buffers)
+				vim.keymap.set("n", "''", builtin.buffers)
+
+				vim.keymap.set("n", "gb", function()
+					builtin.live_grep({ search_dirs = { vim.fn.expand("%:p") }, prompt_title = "Live Grep (Buffers)" })
+				end)
 				vim.keymap.set("n", "gB", function()
 					builtin.live_grep({ grep_open_files = true, prompt_title = "Live Grep (Buffers)" })
 				end)
@@ -560,23 +575,50 @@ require("lazy").setup({
 				local theme = require("lualine.themes.tokyonight")
 				theme.normal.c.bg = vim.g.BG
 				theme.inactive.c.bg = vim.g.BG
+				local lineNrHl = vim.api.nvim_get_hl(0, { name = "LineNr", link = false })
+				local cursorlineNrHl = vim.api.nvim_get_hl(0, { name = "CursorLineNr", link = false })
 				vim.api.nvim_set_hl(
 					0,
-					"LualineFilenameUnderline",
-					{ underline = true, fg = theme.normal.c.fg, bg = theme.normal.c.bg }
+					"LualineFilenameActive",
+					{ fg = cursorlineNrHl.fg, bold = true, bg = theme.normal.c.bg }
 				)
-				local is_qs = function()
-					return vim.bo.buftype == "quickfix"
-				end
-				local filename_fmt = function(str)
-					if vim.bo.modified then
-						return "%#LualineFilenameUnderline#" .. str:sub(1, -2) .. "%*"
-					elseif is_qs() then
-						return "quickfix"
-					else
-						return str
+				vim.api.nvim_set_hl(0, "LualineFilenameInactive", { fg = lineNrHl.fg, bg = theme.normal.c.bg })
+				vim.api.nvim_set_hl(
+					0,
+					"LualineFilenameActiveModified",
+					{ fg = cursorlineNrHl.fg, bold = true, bg = theme.normal.c.bg, underline = true }
+				)
+				vim.api.nvim_set_hl(
+					0,
+					"LualineFilenameInactiveModified",
+					{ fg = lineNrHl.fg, bg = theme.normal.c.bg, underline = true }
+				)
+
+				local function muh_tabs()
+					local cur_tab = vim.fn.tabpagenr()
+					local total_tabs = vim.fn.tabpagenr("$")
+					local tabs = { "%#LualineFilenameInactive#%*" }
+					for tabnr = 1, total_tabs do
+						local tab = vim.api.nvim_list_tabpages()[tabnr]
+						local win = vim.api.nvim_tabpage_get_win(tab)
+						local bufnr = vim.api.nvim_win_get_buf(win)
+						local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(bufnr), ":t")
+						if vim.bo[bufnr].buftype == "quickfix" then
+							name = "quickfix"
+						end
+						if name == "" then
+							name = "[No Name]"
+						end
+						local modified = vim.bo[bufnr].modified
+						local hl = (tabnr == cur_tab) and "%#LualineFilenameActive" or "%#LualineFilenameInactive"
+						if modified then
+							hl = hl .. "Modified"
+						end
+						table.insert(tabs, hl .. "#" .. name .. "%*" .. "%#LualineFilenameInactive#  %*")
 					end
+					return table.concat(tabs)
 				end
+
 				require("lualine").setup({
 					options = {
 						theme = theme,
@@ -584,47 +626,17 @@ require("lazy").setup({
 						component_separators = "",
 					},
 					sections = {
-						lualine_a = {},
+						lualine_a = {
+							{
+								muh_tabs,
+							},
+						},
 						lualine_b = {},
 						lualine_c = {},
 						lualine_x = {
 							"diagnostics",
 							"lsp_status",
-							--"encoding",
-							--"fileformat",
-							--"progress",
-							--"location",
-							{
-								"branch",
-								cond = function()
-									return not is_qs()
-								end,
-							},
-							{
-								"filename",
-								path = 1,
-								symbols = { modified = "", readonly = "[Read-only]" },
-								fmt = filename_fmt,
-							},
-							{
-								"filetype",
-								icon_only = true,
-							},
-						},
-						lualine_y = {},
-						lualine_z = {},
-					},
-					inactive_sections = {
-						lualine_a = {},
-						lualine_b = {},
-						lualine_c = {},
-						lualine_x = {
-							{
-								"filename",
-								path = 1,
-								symbols = { modified = "", readonly = "[Read-only]" },
-								fmt = filename_fmt,
-							},
+							"branch",
 							{
 								"filetype",
 								icon_only = true,
@@ -705,7 +717,7 @@ require("lazy").setup({
 					auto_restore = false,
 					auto_create = false,
 				})
-				vim.o.sessionoptions = "buffers,curdir" --vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
+				vim.o.sessionoptions = "buffers,curdir,tabpages" --vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
 				--vim.cmd("b#")
 			end,
 		},
@@ -947,6 +959,16 @@ require("lazy").setup({
 
 				local capabilities = require("blink.cmp").get_lsp_capabilities()
 
+				vim.lsp.config("lua_ls", {
+					settings = {
+						Lua = {
+							workspace = {
+								library = vim.api.nvim_get_runtime_file("", true),
+							},
+							telemetry = { enable = false },
+						},
+					},
+				})
 				vim.lsp.config("clangd", { capabilities = capabilities })
 				vim.lsp.config("rust_analyzer", {
 					capabilities = capabilities,
@@ -1313,7 +1335,9 @@ require("lazy").setup({
 
 				vim.keymap.set("n", "<F5>", dap.continue)
 				vim.keymap.set("n", "<F2>", dap.toggle_breakpoint)
-				vim.keymap.set("n", "<C-F2>", dap.set_breakpoint(vim.fn.input("Condition: ")))
+				vim.keymap.set("n", "<C-F2>", function()
+					dap.set_breakpoint(vim.fn.input("Condition: "))
+				end)
 				vim.keymap.set("n", "<F10>", dap.step_over)
 				vim.keymap.set("n", "<F11>", dap.step_into)
 				vim.keymap.set("n", "<S-F11>", dap.step_out)

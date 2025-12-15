@@ -6,13 +6,14 @@ vim.keymap.set("i", "qq", "<Esc>")
 vim.opt.number = true
 vim.opt.relativenumber = false
 vim.opt.cursorline = true
-vim.opt.scrolloff = 5
+vim.opt.scrolloff = 2
 vim.opt.foldmethod = "indent"
 vim.opt.foldlevel = 99
 vim.opt.winborder = "single"
 vim.opt.shortmess:append("I")
 vim.opt.showtabline = 0
 vim.opt.laststatus = 3
+vim.o.sessionoptions = "buffers,curdir,tabpages,options,folds"
 
 vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
@@ -89,8 +90,8 @@ vim.opt.confirm = true
 
 vim.keymap.set({ "n", "x", "o" }, "L", "$")
 vim.keymap.set({ "n", "x", "o" }, "H", "^")
-vim.keymap.set({ "n", "x" }, "J", "10j")
-vim.keymap.set({ "n", "x" }, "K", "10k")
+-- vim.keymap.set({ "n", "x" }, "J", "10j")
+-- vim.keymap.set({ "n", "x" }, "K", "10k")
 vim.keymap.set("n", "ZZ", "<Cmd>wqa<CR>")
 vim.keymap.set({ "x" }, ">", ">gv")
 vim.keymap.set({ "x" }, "<", "<gv")
@@ -108,8 +109,7 @@ vim.keymap.set({ "n", "i" }, "<X1Mouse>", "<C-o>")
 vim.keymap.set({ "n", "i" }, "<X2Mouse>", "<C-i>")
 vim.keymap.set({ "n", "x" }, "]t", "gt")
 vim.keymap.set({ "n", "x" }, "[t", "gT")
-vim.keymap.set({ "n", "x" }, "<Tab>", "gt")
-vim.keymap.set({ "n", "x" }, "<S-Tab>", "gT")
+vim.keymap.set({ "n", "x" }, "<S-Tab>", "gt")
 vim.keymap.set({ "n", "x" }, "<leader><Tab>", ":tabnew<CR>", { silent = true })
 vim.keymap.set("t", "<Tab>", [[<C-\><C-n>gt]])
 vim.keymap.set("t", "<S-Tab>", [[<C-\><C-n>gT]])
@@ -132,6 +132,20 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 })
 
 -- shadas & sessions
+vim.api.nvim_create_user_command("SessionSave", function()
+	local dir = vim.fn.getcwd():gsub("/", "%%")
+	local path = vim.fn.stdpath("data") .. "/sessions/" .. dir .. ".vim"
+	vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
+	vim.cmd("mksession! " .. vim.fn.fnameescape(path))
+end, {})
+vim.api.nvim_create_user_command("SessionLoad", function()
+	local dir = vim.fn.getcwd():gsub("/", "%%")
+	local path = vim.fn.stdpath("data") .. "/sessions/" .. dir .. ".vim"
+	if vim.fn.filereadable(path) == 1 then
+		vim.cmd("source " .. vim.fn.fnameescape(path))
+	end
+end, {})
+
 vim.api.nvim_create_autocmd("VimEnter", {
 	callback = function()
 		local arg = vim.fn.argv(0)
@@ -147,32 +161,21 @@ vim.api.nvim_create_autocmd("VimEnter", {
 			pcall(vim.cmd.rshada)
 			-- restore sesh
 			vim.schedule(function()
-				require("auto-session").restore_session(nil, { show_message = false })
+				vim.cmd("SessionLoad")
+				vim.g.is_directory_session = true
 			end)
 		end
 	end,
 })
-
 vim.api.nvim_create_autocmd("VimLeavePre", {
 	callback = function()
-		require("auto-session").save_session()
+		if vim.g.is_directory_session then
+			vim.cmd("SessionSave")
+		end
 	end,
 })
 
--- marks (local disabled)
-vim.keymap.set("n", "M", function()
-	local mark = vim.fn.getcharstr()
-	vim.cmd("normal! m" .. string.upper(mark))
-end)
-vim.keymap.set("n", "'", function()
-	local mark = vim.fn.getcharstr()
-	if tonumber(mark) ~= nil then
-		vim.cmd("normal! " .. mark .. "gt")
-	else
-		vim.cmd("normal! '" .. string.upper(mark))
-		vim.cmd("normal! g'\"")
-	end
-end)
+-- marks
 vim.keymap.set("n", "<leader>m", "m")
 vim.keymap.set("n", "<leader>'", "'")
 
@@ -418,9 +421,9 @@ require("lazy").setup({
 						hl.FlashMatch = { bg = "#006666", fg = "#111111", bold = false }
 						hl.FlashLabel = { bg = "#880088", fg = "#FAFAFA", bold = true }
 						hl.Include = { fg = c.purple, italic = true }
-						hl.TabLine = { fg = hl.LineNr.fg, bg = "NONE" }
+						hl.TabLine = { fg = hl.LineNr.fg, bg = BG }
 						hl.TabLineFill = { bg = BG }
-						hl.TabLineSel = { fg = hl.CursorLineNr.fg, bold = true, bg = "NONE" }
+						hl.TabLineSel = { fg = hl.CursorLineNr.fg, bold = true, bg = BG }
 						vim.defer_fn(function()
 							local function tweak(hl_name, f)
 								local highlight = vim.api.nvim_get_hl(0, { name = hl_name, link = false })
@@ -548,6 +551,8 @@ require("lazy").setup({
 					builtin.grep_string({ default_text = text }) -- literal str
 				end, { silent = true })
 
+				vim.keymap.set("n", "gH", builtin.help_tags)
+
 				vim.keymap.set("n", "gs", builtin.lsp_dynamic_workspace_symbols)
 
 				vim.keymap.set("n", "''", builtin.buffers)
@@ -593,30 +598,37 @@ require("lazy").setup({
 					"LualineFilenameInactiveModified",
 					{ fg = lineNrHl.fg, bg = theme.normal.c.bg, underline = true }
 				)
-
 				local function muh_tabs()
 					local cur_tab = vim.fn.tabpagenr()
 					local total_tabs = vim.fn.tabpagenr("$")
-					local tabs = { "%#LualineFilenameInactive#%*" }
+					local tabpages = vim.api.nvim_list_tabpages()
+					local tabline_content = { "%#LualineFilenameInactive#%*" }
 					for tabnr = 1, total_tabs do
-						local tab = vim.api.nvim_list_tabpages()[tabnr]
+						local tab = tabpages[tabnr]
 						local win = vim.api.nvim_tabpage_get_win(tab)
 						local bufnr = vim.api.nvim_win_get_buf(win)
-						local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(bufnr), ":t")
-						if vim.bo[bufnr].buftype == "quickfix" then
-							name = "quickfix"
+						local buf_name = vim.api.nvim_buf_get_name(bufnr)
+						local name = vim.fn.fnamemodify(buf_name, ":.")
+						local editable = true
+						if name == "" then
+							name = vim.bo[bufnr].buftype
+							editable = false
 						end
 						if name == "" then
 							name = "[No Name]"
+							editable = false
+						end
+						if total_tabs > 3 then
+							name = tabnr .. ": " .. name
 						end
 						local modified = vim.bo[bufnr].modified
 						local hl = (tabnr == cur_tab) and "%#LualineFilenameActive" or "%#LualineFilenameInactive"
-						if modified then
+						if modified and editable then
 							hl = hl .. "Modified"
 						end
-						table.insert(tabs, hl .. "#" .. name .. "%*" .. "%#LualineFilenameInactive#  %*")
+						table.insert(tabline_content, hl .. "#" .. name .. "%*" .. "%#LualineFilenameInactive#  %*")
 					end
-					return table.concat(tabs)
+					return table.concat(tabline_content)
 				end
 
 				require("lualine").setup({
@@ -662,11 +674,12 @@ require("lazy").setup({
 				require("noice").setup({
 					routes = {
 						skip("msg_show", "", "B written"),
+						skip("msg_show", "", '^".+L, .+B$'),
 						skip("msg_show", "lua_error", "lsp_status.lua:"),
 						popup("msg_show", { "shell_out", "shell_err" }),
 						popup("msg_show", nil, "mark line"),
 						popup("msg_show", nil, "cmd history"),
-						popup("msg_show", nil, "Type Name Content"),
+						popup("msg_show", "list_cmd", ""),
 					},
 					presets = {
 						lsp_doc_border = true,
@@ -705,20 +718,6 @@ require("lazy").setup({
 						vim.notify("Recorded @ '" .. reg .. "'", vim.log.levels.INFO, { Title = "Macro" })
 					end,
 				})
-			end,
-		},
-
-		{
-			"rmagatti/auto-session",
-			config = function()
-				require("auto-session").setup({
-					suppressed_dirs = { "~/", "~/Downloads", "/" },
-					auto_save = false,
-					auto_restore = false,
-					auto_create = false,
-				})
-				vim.o.sessionoptions = "buffers,curdir,tabpages" --vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
-				--vim.cmd("b#")
 			end,
 		},
 
@@ -1229,6 +1228,36 @@ require("lazy").setup({
 				},
 			},
 		},
+		{
+			"ivfiev/clean-marks.nvim",
+			-- dir = "~/dev/clean-marks.nvim",
+			event = "VeryLazy",
+			opts = {
+				logging_enabled = true,
+				mappings = {
+					goto_mark = nil,
+					set_mark = "M",
+					float_window = "<leader>cm",
+				},
+				window = {
+					height = 0.95,
+					width = 0.7,
+				},
+			},
+			config = function(_, opts)
+				local cm = require("clean-marks")
+				cm.setup(opts)
+				vim.keymap.set("n", "'", function()
+					local peek = vim.fn.getcharstr(1)
+					if tonumber(peek) ~= nil then
+						local mark = vim.fn.getcharstr()
+						vim.cmd("normal! " .. mark .. "gt")
+					else
+						cm.goto_mark()
+					end
+				end)
+			end,
+		},
 
 		--
 		--
@@ -1424,15 +1453,15 @@ require("lazy").setup({
 				end
 			end,
 		},
-	},
-	{
-		"Cliffback/netcoredbg-macOS-arm64.nvim",
-		enabled = IS_WORK,
-		ft = { "cs" },
-		dependencies = { "mfussenegger/nvim-dap" },
-		config = function()
-			require("netcoredbg-macOS-arm64").setup(require("dap"))
-		end,
+		{
+			"Cliffback/netcoredbg-macOS-arm64.nvim",
+			enabled = IS_WORK,
+			ft = { "cs" },
+			dependencies = { "mfussenegger/nvim-dap" },
+			config = function()
+				require("netcoredbg-macOS-arm64").setup(require("dap"))
+			end,
+		},
 	},
 
 	install = { colorscheme = { "habamax" } },

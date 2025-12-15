@@ -2,6 +2,7 @@ vim.g.mapleader = ","
 vim.g.maplocalleader = " "
 vim.g.have_nerd_font = true
 vim.keymap.set("i", "qq", "<Esc>")
+vim.keymap.set({ "n", "x" }, ",,", ",")
 
 vim.opt.number = true
 vim.opt.relativenumber = false
@@ -13,7 +14,7 @@ vim.opt.winborder = "single"
 vim.opt.shortmess:append("I")
 vim.opt.showtabline = 0
 vim.opt.laststatus = 3
-vim.o.sessionoptions = "buffers,curdir,tabpages,options,folds"
+vim.o.sessionoptions = "buffers,curdir,tabpages,folds" -- options
 
 vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
@@ -39,6 +40,12 @@ vim.keymap.set(
 	"n",
 	"qr",
 	":%s///g | update<Left><Left><Left><Left><Left><Left><Left><Left><Left><Left><Left><Left>",
+	{ silent = false }
+)
+vim.keymap.set(
+	"x",
+	"qr",
+	":s/// | update<Left><Left><Left><Left><Left><Left><Left><Left><Left><Left><Left>",
 	{ silent = false }
 )
 vim.keymap.set(
@@ -90,8 +97,6 @@ vim.opt.confirm = true
 
 vim.keymap.set({ "n", "x", "o" }, "L", "$")
 vim.keymap.set({ "n", "x", "o" }, "H", "^")
--- vim.keymap.set({ "n", "x" }, "J", "10j")
--- vim.keymap.set({ "n", "x" }, "K", "10k")
 vim.keymap.set("n", "ZZ", "<Cmd>wqa<CR>")
 vim.keymap.set({ "x" }, ">", ">gv")
 vim.keymap.set({ "x" }, "<", "<gv")
@@ -442,6 +447,7 @@ require("lazy").setup({
 
 		{
 			"nvim-treesitter/nvim-treesitter",
+			dependencies = { "nvim-treesitter/nvim-treesitter-textobjects", branch = "master" },
 			branch = "master",
 			lazy = false,
 			build = ":TSUpdate",
@@ -470,8 +476,67 @@ require("lazy").setup({
 						additional_vim_regex_highlighting = false,
 					},
 					indent = { enable = true },
+					textobjects = {
+						select = {
+							enable = true,
+							lookahead = true,
+							keymaps = {
+								["af"] = "@function.outer",
+								["if"] = "@function.inner",
+								["at"] = "@class.outer",
+								["it"] = "@class.inner",
+								["ab"] = "@block.outer",
+								["ib"] = "@block.inner",
+								["ai"] = "@conditional.outer",
+								["ii"] = "@conditional.inner",
+								["al"] = "@loop.outer",
+								["il"] = "@loop.inner",
+								["aa"] = "@parameter.outer",
+							},
+							selection_modes = {
+								["@parameter.outer"] = "v", -- charwise
+								["@function.outer"] = "V", -- linewise
+								["@class.outer"] = "V", -- blockwise, nah actually linewise
+							},
+							include_surrounding_whitespace = false,
+						},
+						move = {
+							enable = true,
+							set_jumps = false,
+							goto_next_start = {
+								["]t"] = "@class.outer",
+								["]f"] = "@function.outer",
+								["]b"] = "@block.outer",
+								["}"] = "@block.outer",
+								["]i"] = "@conditional.outer",
+								["]l"] = "@loop.outer",
+								["]a"] = "@parameter.outer",
+							},
+							goto_previous_start = {
+								["[t"] = "@class.outer",
+								["[f"] = "@function.outer",
+								["[b"] = "@block.outer",
+								["{"] = "@block.outer",
+								["[i"] = "@conditional.outer",
+								["[l"] = "@loop.outer",
+								["[a"] = "@parameter.outer",
+							},
+						},
+						swap = {
+							enable = true,
+							swap_next = {
+								["]A"] = "@parameter.inner",
+							},
+							swap_previous = {
+								["[A"] = "@parameter.inner",
+							},
+						},
+					},
 				})
 				vim.filetype.add({ extension = { yml = "yaml" } })
+				local ts_repeat_move = require("nvim-treesitter.textobjects.repeatable_move")
+				vim.keymap.set({ "n", "x", "o" }, ";", ts_repeat_move.repeat_last_move)
+				vim.keymap.set({ "n", "x", "o" }, ",,", ts_repeat_move.repeat_last_move_previous)
 			end,
 		},
 

@@ -2,6 +2,10 @@ vim.g.mapleader = ","
 vim.g.maplocalleader = " "
 vim.g.have_nerd_font = true
 vim.keymap.set("i", "qq", "<Esc>")
+vim.keymap.set("i", "`", function()
+	send_key("<Esc>", "i")
+end)
+vim.keymap.set("i", "¬", "`")
 vim.keymap.set({ "n", "x" }, ",,", ",")
 
 vim.opt.number = true
@@ -536,7 +540,11 @@ require("lazy").setup({
 				vim.filetype.add({ extension = { yml = "yaml" } })
 				local ts_repeat_move = require("nvim-treesitter.textobjects.repeatable_move")
 				vim.keymap.set({ "n", "x", "o" }, ";", ts_repeat_move.repeat_last_move)
-				vim.keymap.set({ "n", "x", "o" }, ",,", ts_repeat_move.repeat_last_move_previous)
+				vim.keymap.set({ "n", "x", "o" }, ",,", ts_repeat_move.repeat_last_move_opposite)
+				vim.keymap.set({ "n", "x", "o" }, "f", ts_repeat_move.builtin_f_expr, { expr = true })
+				vim.keymap.set({ "n", "x", "o" }, "F", ts_repeat_move.builtin_F_expr, { expr = true })
+				vim.keymap.set({ "n", "x", "o" }, "t", ts_repeat_move.builtin_t_expr, { expr = true })
+				vim.keymap.set({ "n", "x", "o" }, "T", ts_repeat_move.builtin_T_expr, { expr = true })
 			end,
 		},
 
@@ -854,8 +862,12 @@ require("lazy").setup({
 		{
 			"windwp/nvim-autopairs",
 			event = "InsertEnter",
-			config = true,
 			opts = {},
+			config = function(_, opts)
+				local ap = require("nvim-autopairs")
+				ap.setup(opts)
+				ap.remove_rule("`")
+			end,
 		},
 
 		{
@@ -1294,8 +1306,8 @@ require("lazy").setup({
 			},
 		},
 		{
-			"ivfiev/clean-marks.nvim",
-			-- dir = "~/dev/clean-marks.nvim",
+			-- "ivfiev/clean-marks.nvim",
+			dir = "~/dev/clean-marks.nvim",
 			event = "VeryLazy",
 			opts = {
 				logging_enabled = true,
@@ -1305,8 +1317,8 @@ require("lazy").setup({
 					float_window = "<leader>cm",
 				},
 				window = {
-					height = 0.95,
-					width = 0.7,
+					height = 0.8,
+					width = 0.6,
 				},
 			},
 			config = function(_, opts)

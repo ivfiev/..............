@@ -3,7 +3,7 @@ vim.g.maplocalleader = " "
 vim.g.have_nerd_font = true
 vim.keymap.set("i", "qq", "<Esc>")
 vim.keymap.set("i", "`", function()
-	send_key("<Esc>", "i")
+	send_key("<Esc>", "i") -- +autopairs rule
 end)
 vim.keymap.set("i", "¬", "`")
 vim.keymap.set({ "n", "x" }, ",,", ",")
@@ -18,7 +18,7 @@ vim.opt.winborder = "single"
 vim.opt.shortmess:append("I")
 vim.opt.showtabline = 0
 vim.opt.laststatus = 3
-vim.o.sessionoptions = "buffers,curdir,tabpages,folds" -- options
+vim.opt.sessionoptions = "buffers,tabpages,folds" -- options(!), curdir
 
 vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
@@ -58,8 +58,20 @@ vim.keymap.set(
 	":cdo s///c | update<Left><Left><Left><Left><Left><Left><Left><Left><Left><Left><Left><Left>",
 	{ silent = false }
 )
-vim.keymap.set("n", "qd", ':cdo execute "norm! "<Left>', { silent = false }) --  <Esc> etc
+vim.keymap.set("n", "qd", ':cdo execute "norm! "<Left>', { silent = false }) --  <Esc>, C-v + Esc, etc
 vim.keymap.set({ "n", "x" }, "<leader>jq", ':%! jq ""<Left>', { silent = false })
+vim.keymap.set("x", "qs", function()
+	local open = vim.fn.getcharstr()
+	local close = vim.fn.getcharstr()
+	vim.cmd('norm! "zy')
+	local sel = vim.fn.getreg("z"):gsub("\n$", "")
+	if sel == nil or sel == "" then
+		return
+	end
+	local surrounded = open .. sel .. close
+	vim.fn.setreg("z", surrounded)
+	vim.cmd('norm! gv"zP`<lv`>ho')
+end, { silent = true })
 
 vim.keymap.set("n", "Q", function()
 	for _, win in ipairs(vim.api.nvim_list_wins()) do
@@ -106,14 +118,10 @@ vim.keymap.set({ "x" }, ">", ">gv")
 vim.keymap.set({ "x" }, "<", "<gv")
 
 vim.keymap.set({ "n", "i", "x" }, "<C-s>", "<Cmd>:w<CR><Esc>", { silent = true })
-vim.keymap.set("i", "<C-v>", "<Esc>Pa", { remap = true })
 vim.keymap.set({ "x" }, "<C-c>", function()
 	vim.cmd('normal! "+y')
 end)
-vim.keymap.set({ "x" }, "p", '"_dp')
-vim.keymap.set({ "x" }, "P", '"_dP')
 
-vim.keymap.set({ "n", "i", "x" }, "<C-0>", "<C-v>")
 vim.keymap.set({ "n", "i" }, "<X1Mouse>", "<C-o>")
 vim.keymap.set({ "n", "i" }, "<X2Mouse>", "<C-i>")
 vim.keymap.set({ "n", "x" }, "]t", "gt")
@@ -172,6 +180,16 @@ vim.api.nvim_create_autocmd("VimEnter", {
 			vim.schedule(function()
 				vim.cmd("SessionLoad")
 				vim.g.is_directory_session = true
+				-- kill garbage bufs
+				vim.defer_fn(function()
+					local bufs = vim.api.nvim_list_bufs()
+					for _, buf in ipairs(bufs) do
+						local bufname = vim.api.nvim_buf_get_name(buf)
+						if vim.bo[buf].buftype ~= "" or vim.fn.filereadable(bufname) == 0 then
+							vim.api.nvim_buf_delete(buf, { force = true })
+						end
+					end
+				end, 20)
 			end)
 		end
 	end,
@@ -313,45 +331,6 @@ function virt_text(toggle, ns, text, line, hl)
 	end
 end
 
-Remap = {}
-function Remap:new()
-	local remap = {}
-	return setmetatable(remap, { __index = Remap })
-end
-
-function Remap:override(mode, lhs, rhs)
-	local original = vim.fn.maparg(lhs, mode, nil, true)
-	if original == nil or original == "" or original.rhs == "" or original.rhs == nil then
-		table.insert(self, { mode = mode, lhs = lhs, none = true })
-	else
-		table.insert(self, {
-			mode = mode,
-			lhs = lhs,
-			rhs = original.rhs,
-			noremap = original.noremap == 1,
-			silent = original.silent == 1,
-			buffer = original.buffer == 1,
-		})
-	end
-	vim.keymap.set(mode, lhs, rhs)
-end
-
-function Remap:restore()
-	for i, map in ipairs(self) do
-		if map.none then
-			vim.keymap.del(map.mode, map.lhs)
-		else
-			vim.keymap.set(
-				map.mode,
-				map.lhs,
-				map.rhs,
-				{ noremap = map.noremap, silent = map.silent, buffer = map.buffer }
-			)
-		end
-		self[i] = nil
-	end
-end
-
 Toggle = {}
 function Toggle:new(initial, t, f)
 	local toggle = { value = initial, t = t, f = f }
@@ -429,7 +408,7 @@ require("lazy").setup({
 						hl.FlashCurrent = { bg = "#006666", fg = "#111111", bold = false }
 						hl.FlashMatch = { bg = "#006666", fg = "#111111", bold = false }
 						hl.FlashLabel = { bg = "#880088", fg = "#FAFAFA", bold = true }
-						hl.Include = { fg = c.purple, italic = true }
+						hl.Include = { fg = c.purple }
 						hl.TabLine = { fg = hl.LineNr.fg, bg = BG }
 						hl.TabLineFill = { bg = BG }
 						hl.TabLineSel = { fg = hl.CursorLineNr.fg, bold = true, bg = BG }
@@ -442,7 +421,7 @@ require("lazy").setup({
 							tweak("@keyword", function(h)
 								h.italic = false
 							end)
-						end, 100)
+						end, 50)
 					end,
 				})
 				vim.cmd([[colorscheme tokyonight-night]])
@@ -452,7 +431,7 @@ require("lazy").setup({
 		{
 			"nvim-treesitter/nvim-treesitter",
 			dependencies = { "nvim-treesitter/nvim-treesitter-textobjects", branch = "master" },
-			branch = "master",
+			branch = "master", -- TODO: migrate to 'main'
 			lazy = false,
 			build = ":TSUpdate",
 			config = function()
@@ -480,6 +459,15 @@ require("lazy").setup({
 						additional_vim_regex_highlighting = false,
 					},
 					indent = { enable = true },
+					incremental_selection = {
+						enable = true,
+						keymaps = {
+							init_selection = false,
+							node_incremental = "+",
+							node_decremental = "-",
+							scope_incremental = false,
+						},
+					},
 					textobjects = {
 						select = {
 							enable = true,
@@ -487,20 +475,22 @@ require("lazy").setup({
 							keymaps = {
 								["af"] = "@function.outer",
 								["if"] = "@function.inner",
-								["at"] = "@class.outer",
-								["it"] = "@class.inner",
 								["ab"] = "@block.outer",
 								["ib"] = "@block.inner",
 								["ai"] = "@conditional.outer",
 								["ii"] = "@conditional.inner",
 								["al"] = "@loop.outer",
 								["il"] = "@loop.inner",
+								["ac"] = "@call.outer",
+								["ic"] = "@call.inner",
 								["aa"] = "@parameter.outer",
 							},
 							selection_modes = {
-								["@parameter.outer"] = "v", -- charwise
-								["@function.outer"] = "V", -- linewise
-								["@class.outer"] = "V", -- blockwise, nah actually linewise
+								["@parameter.outer"] = "v",
+								["@function.outer"] = "V",
+								["@conditional.outer"] = "V",
+								["@loop.outer"] = "V",
+								["@block.outer"] = "V",
 							},
 							include_surrounding_whitespace = false,
 						},
@@ -508,31 +498,43 @@ require("lazy").setup({
 							enable = true,
 							set_jumps = false,
 							goto_next_start = {
-								["]t"] = "@class.outer",
 								["]f"] = "@function.outer",
 								["]b"] = "@block.outer",
-								["}"] = "@block.outer",
 								["]i"] = "@conditional.outer",
 								["]l"] = "@loop.outer",
 								["]a"] = "@parameter.outer",
+								["]c"] = "@call.inner",
+							},
+							goto_next_end = {
+								["]F"] = "@function.outer",
+								["]B"] = "@block.outer",
+								["]I"] = "@conditional.outer",
+								["]L"] = "@loop.outer",
+								["]C"] = "@call.inner",
 							},
 							goto_previous_start = {
-								["[t"] = "@class.outer",
 								["[f"] = "@function.outer",
 								["[b"] = "@block.outer",
-								["{"] = "@block.outer",
 								["[i"] = "@conditional.outer",
 								["[l"] = "@loop.outer",
 								["[a"] = "@parameter.outer",
+								["[c"] = "@call.inner",
+							},
+							goto_previous_end = {
+								["[F"] = "@function.outer",
+								["[B"] = "@block.outer",
+								["[I"] = "@conditional.outer",
+								["[L"] = "@loop.outer",
+								["[C"] = "@call.inner",
 							},
 						},
 						swap = {
 							enable = true,
 							swap_next = {
-								["]A"] = "@parameter.inner",
+								[")a"] = "@parameter.inner",
 							},
 							swap_previous = {
-								["[A"] = "@parameter.inner",
+								["(a"] = "@parameter.inner",
 							},
 						},
 					},
@@ -545,6 +547,35 @@ require("lazy").setup({
 				vim.keymap.set({ "n", "x", "o" }, "F", ts_repeat_move.builtin_F_expr, { expr = true })
 				vim.keymap.set({ "n", "x", "o" }, "t", ts_repeat_move.builtin_t_expr, { expr = true })
 				vim.keymap.set({ "n", "x", "o" }, "T", ts_repeat_move.builtin_T_expr, { expr = true })
+
+				local group = vim.api.nvim_create_augroup("TsZzWrap", { clear = true })
+				vim.api.nvim_create_autocmd("FileType", {
+					group = group,
+					callback = function(ev)
+						if vim.bo[ev.buf].buftype ~= "" then
+							return
+						end
+						if vim.b[ev.buf].ts_zz_ok then
+							return
+						end
+						vim.b[ev.buf].ts_zz_ok = true
+						vim.defer_fn(function()
+							if not vim.api.nvim_buf_is_valid(ev.buf) or not vim.api.nvim_buf_is_loaded(ev.buf) then
+								return
+							end
+							local zz = { "]f", "[f" }
+							local mappings = vim.api.nvim_buf_get_keymap(0, "n")
+							for _, map in ipairs(mappings) do
+								if map.callback and vim.tbl_contains(zz, map.lhs) then
+									vim.keymap.set("n", map.lhs, function()
+										map.callback()
+										vim.cmd("norm! zz")
+									end, { buffer = ev.buf })
+								end
+							end
+						end, 50)
+					end,
+				})
 			end,
 		},
 
@@ -626,15 +657,16 @@ require("lazy").setup({
 
 				vim.keymap.set("n", "gH", builtin.help_tags)
 
-				vim.keymap.set("n", "gs", builtin.lsp_dynamic_workspace_symbols)
-
 				vim.keymap.set("n", "''", builtin.buffers)
 
 				vim.keymap.set("n", "gb", function()
-					builtin.live_grep({ search_dirs = { vim.fn.expand("%:p") }, prompt_title = "Live Grep (Buffers)" })
+					builtin.live_grep({
+						search_dirs = { vim.fn.expand("%:p") },
+						prompt_title = "Live Grep (Current buffer)",
+					})
 				end)
 				vim.keymap.set("n", "gB", function()
-					builtin.live_grep({ grep_open_files = true, prompt_title = "Live Grep (Buffers)" })
+					builtin.live_grep({ grep_open_files = true, prompt_title = "Live Grep (All buffers)" })
 				end)
 
 				vim.keymap.set("n", "gm", builtin.marks)
@@ -746,12 +778,14 @@ require("lazy").setup({
 				end
 				require("noice").setup({
 					routes = {
+						skip("msg_show", "lua_error", "lsp_status.lua:"),
 						skip("msg_show", "", "B written"),
 						skip("msg_show", "", '^".+L, .+B$'),
-						skip("msg_show", "lua_error", "lsp_status.lua:"),
+						skip("notify", "error", "telescope"),
 						popup("msg_show", { "shell_out", "shell_err" }),
-						popup("msg_show", nil, "mark line"),
-						popup("msg_show", nil, "cmd history"),
+						popup("msg_show", nil, "^mark line"),
+						popup("msg_show", nil, "^[ ]+#[ ]+cmd history"),
+						popup("msg_show", nil, "^Type Name Content"),
 						popup("msg_show", "list_cmd", ""),
 					},
 					presets = {
@@ -777,6 +811,8 @@ require("lazy").setup({
 						},
 					},
 				})
+				vim.keymap.set("n", "<leader>na", ":NoiceAll<Cr>", { silent = true })
+				vim.keymap.set("n", "<leader>nd", ":NoiceDismiss<Cr>", { silent = true })
 				vim.api.nvim_create_autocmd("RecordingEnter", {
 					callback = function()
 						local reg = vim.fn.reg_recording()
@@ -971,7 +1007,12 @@ require("lazy").setup({
 						local map = function(keys, func, desc, mode)
 							mode = mode or "n"
 							desc = desc or ""
-							vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = "LSP: " .. desc })
+							vim.keymap.set(
+								mode,
+								keys,
+								func,
+								{ buffer = event.buf, desc = "LSP: " .. desc, nowait = true }
+							)
 						end
 
 						map("gn", vim.lsp.buf.rename, "[R]e[n]ame")
@@ -979,9 +1020,12 @@ require("lazy").setup({
 
 						local telescope = require("telescope.builtin")
 						map("gr", telescope.lsp_references, "[G]oto [R]eferences")
-						map("gi", telescope.lsp_implementations, "[G]oto [I]mplementation")
+						map("gi", telescope.lsp_implementations, "[G]oto [I]mplementation") -- qi
 						map("gd", telescope.lsp_definitions, "[G]oto [D]efinition")
 						map("ge", telescope.diagnostics, "[G]oto [E]rror")
+						map("gs", telescope.lsp_dynamic_workspace_symbols, "[G]oto [S]ymbols")
+						-- Jump to the type of the word under cursor.
+						map("gt", telescope.lsp_type_definitions, "[G]oto [T]ype Definition")
 
 						map("gIH", function()
 							vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
@@ -991,10 +1035,6 @@ require("lazy").setup({
 
 						-- Fuzzy find all the symbols in your current document.
 						map("gDs", telescope.lsp_document_symbols, "Open Document Symbols")
-						-- Fuzzy find all the symbols in your current workspace.
-						map("gws", telescope.lsp_dynamic_workspace_symbols, "Open Workspace Symbols")
-						-- Jump to the type of the word under your cursor.
-						map("gtd", telescope.lsp_type_definitions, "[G]oto [T]ype Definition")
 					end,
 				})
 				-- drop conflicting maps
@@ -1036,6 +1076,7 @@ require("lazy").setup({
 				local capabilities = require("blink.cmp").get_lsp_capabilities()
 
 				vim.lsp.config("lua_ls", {
+					capabilities = capabilities,
 					settings = {
 						Lua = {
 							workspace = {
@@ -1293,7 +1334,7 @@ require("lazy").setup({
 					preset = "luasnip",
 				},
 				-- :h blink-cmp-config-fuzzy
-				fuzzy = { implementation = "prefer_rust_with_warning" },
+				fuzzy = { implementation = "rust" },
 				-- func signatures
 				signature = { enabled = true },
 				cmdline = {
@@ -1310,7 +1351,7 @@ require("lazy").setup({
 			dir = "~/dev/clean-marks.nvim",
 			event = "VeryLazy",
 			opts = {
-				logging_enabled = true,
+				log_level = vim.log.levels.DEBUG,
 				mappings = {
 					goto_mark = nil,
 					set_mark = "M",
@@ -1495,38 +1536,18 @@ require("lazy").setup({
 					vim.notify("Exceptions on", vim.log.levels.INFO)
 				end)
 
-				local remaps = Remap:new()
-
 				dap.listeners.after.event_initialized["on_start"] = function()
+					-- hydra:activate()
 					print("Debugger started!")
-					remaps:override("n", "n", dap.step_over)
-					remaps:override("n", "N", dap.step_into)
-					remaps:override("n", "<C-n>", dap.continue)
-					remaps:override("n", "<BS>", dap.step_out)
-					remaps:override("n", "b", dap.toggle_breakpoint)
-					remaps:override("n", "i", function()
-						require("dapui").eval()
-						vim.schedule(function()
-							send_key("<C-w>w<CR>", "n")
-						end)
-					end)
-					remaps:override("n", "e", function()
-						exns:toggle()
-					end)
-					remaps:override("n", "X", function()
-						dap.terminate()
-						dapui.close()
-					end)
 				end
 
 				dap.listeners.before.event_terminated["on_end"] = function()
+					-- hydra:kill()
 					print("Debugger terminated.")
-					remaps:restore()
 				end
 
 				dap.listeners.before.event_exited["on_exit"] = function()
 					print("Target process exited.")
-					remaps:restore()
 				end
 			end,
 		},

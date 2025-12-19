@@ -12,6 +12,7 @@ vim.opt.number = true
 vim.opt.relativenumber = false
 vim.opt.cursorline = true
 vim.opt.scrolloff = 2
+vim.opt.cmdheight = 0
 vim.opt.foldmethod = "indent"
 vim.opt.foldlevel = 99
 vim.opt.winborder = "single"

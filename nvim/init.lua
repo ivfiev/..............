@@ -12,6 +12,7 @@ vim.opt.number = true
 vim.opt.relativenumber = false
 vim.opt.cursorline = true
 vim.opt.scrolloff = 2
+vim.opt.sidescrolloff = 2
 vim.opt.cmdheight = 0
 vim.opt.foldmethod = "indent"
 vim.opt.foldlevel = 99
@@ -391,6 +392,9 @@ require("lazy").setup({
 						c.bg_popup = BG
 						c.bg_highlight = BG
 					end,
+					styles = {
+						keywords = { italic = false },
+					},
 					on_highlights = function(hl, c)
 						hl.CursorLine = { bg = "#001122" }
 						hl.CursorLineNr.fg = "#00CCCC"
@@ -413,16 +417,6 @@ require("lazy").setup({
 						hl.TabLine = { fg = hl.LineNr.fg, bg = BG }
 						hl.TabLineFill = { bg = BG }
 						hl.TabLineSel = { fg = hl.CursorLineNr.fg, bold = true, bg = BG }
-						vim.defer_fn(function()
-							local function tweak(hl_name, f)
-								local highlight = vim.api.nvim_get_hl(0, { name = hl_name, link = false })
-								f(highlight)
-								vim.api.nvim_set_hl(0, hl_name, highlight)
-							end
-							tweak("@keyword", function(h)
-								h.italic = false
-							end)
-						end, 50)
 					end,
 				})
 				vim.cmd([[colorscheme tokyonight-night]])
@@ -671,6 +665,8 @@ require("lazy").setup({
 				end)
 
 				vim.keymap.set("n", "gm", builtin.marks)
+
+				vim.keymap.set("n", "gT", builtin.builtin)
 
 				vim.keymap.set("n", "g<BS>", builtin.resume)
 
@@ -1348,11 +1344,11 @@ require("lazy").setup({
 			},
 		},
 		{
-			-- "ivfiev/clean-marks.nvim",
-			dir = "~/dev/clean-marks.nvim",
+			"ivfiev/clean-marks.nvim",
+			-- dir = "~/dev/clean-marks.nvim",
 			event = "VeryLazy",
 			opts = {
-				log_level = vim.log.levels.DEBUG,
+				log_level = vim.log.levels.WARN,
 				mappings = {
 					goto_mark = nil,
 					set_mark = "M",

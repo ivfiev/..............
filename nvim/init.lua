@@ -133,13 +133,14 @@ vim.api.nvim_create_autocmd("TabLeave", {
 		vim.g.last_tab = vim.api.nvim_get_current_tabpage()
 	end,
 })
-vim.keymap.set({ "i", "n", "x" }, "<S-Tab>", function()
+local function prev_tab()
 	if vim.g.last_tab and vim.api.nvim_tabpage_is_valid(vim.g.last_tab) then
 		vim.api.nvim_set_current_tabpage(vim.g.last_tab)
 	end
-end, { silent = true })
+end
+vim.keymap.set({ "i", "n", "x" }, "<S-Tab>", prev_tab)
+vim.keymap.set("t", "<S-Tab>", prev_tab)
 vim.keymap.set({ "n", "x" }, "<leader><Tab>", ":tab split<CR>", { silent = true })
-vim.keymap.set("t", "<S-Tab>", [[<C-\><C-n>gt]])
 vim.keymap.set("n", "U", "<C-r>")
 vim.keymap.set("n", "<C-r>", "U") -- C-restore
 vim.keymap.set("i", "<C-BS>", "<C-w>")
@@ -254,11 +255,11 @@ vim.keymap.set("x", "/", function()
 end)
 
 -- terminal
-PREV_TERMINAL = -1
+vim.g.last_term = -1
 vim.keymap.set("n", "<leader>T", ":terminal<CR>", { silent = true })
 vim.keymap.set("n", "<leader>t", function()
-	if PREV_TERMINAL ~= -1 then
-		vim.api.nvim_set_current_buf(PREV_TERMINAL)
+	if vim.api.nvim_buf_is_valid(vim.g.last_term) then
+		vim.api.nvim_set_current_buf(vim.g.last_term)
 	else
 		vim.cmd("terminal", { silent = true })
 	end
@@ -269,11 +270,53 @@ vim.api.nvim_create_autocmd({ "TermOpen", "BufEnter", "TabEnter" }, {
 	pattern = "*",
 	callback = function()
 		if vim.opt.buftype:get() == "terminal" then
-			vim.cmd("startinsert")
-			PREV_TERMINAL = vim.api.nvim_get_current_buf()
+			vim.g.last_term = vim.api.nvim_get_current_buf()
+			vim.schedule(function()
+				vim.cmd("startinsert")
+			end)
 		end
 	end,
 })
+vim.keymap.set({ "i", "n" }, "<C-/>", function()
+	local ws = vim.api.nvim_tabpage_list_wins(vim.api.nvim_get_current_tabpage())
+	local term = nil
+	for _, w in ipairs(ws) do
+		if vim.bo[vim.api.nvim_win_get_buf(w)].buftype == "terminal" then
+			term = w
+			break
+		end
+	end
+	if not term then
+		vim.cmd("silent! split")
+		if vim.api.nvim_buf_is_valid(vim.g.last_term) then
+			vim.api.nvim_set_current_buf(vim.g.last_term)
+		else
+			vim.cmd("terminal")
+		end
+	else
+		vim.api.nvim_win_close(term, true)
+	end
+end)
+vim.keymap.set("t", "<C-/>", function()
+	local ws = vim.api.nvim_tabpage_list_wins(vim.api.nvim_get_current_tabpage())
+	if #ws > 1 then
+		vim.cmd("close")
+	end
+end)
+vim.keymap.set("t", "<C-w><C-w>", function()
+	local tab = vim.api.nvim_get_current_tabpage()
+	local ws = vim.api.nvim_tabpage_list_wins(tab)
+	local win = vim.api.nvim_get_current_win()
+	for _, w in ipairs(ws) do
+		if w ~= win then
+			local cfg = vim.api.nvim_win_get_config(w)
+			if cfg.relative == "" then
+				vim.api.nvim_set_current_win(w)
+				break
+			end
+		end
+	end
+end)
 
 -- git blame
 BLAME_NS = vim.api.nvim_create_namespace("virt_text_blame")

@@ -128,10 +128,18 @@ vim.keymap.set({ "n", "i" }, "<X1Mouse>", "<C-o>")
 vim.keymap.set({ "n", "i" }, "<X2Mouse>", "<C-i>")
 vim.keymap.set({ "n", "x" }, "]t", "gt")
 vim.keymap.set({ "n", "x" }, "[t", "gT")
-vim.keymap.set({ "n", "x" }, "<S-Tab>", "gt")
-vim.keymap.set({ "n", "x" }, "<leader><Tab>", ":tabnew<CR>", { silent = true })
-vim.keymap.set("t", "<Tab>", [[<C-\><C-n>gt]])
-vim.keymap.set("t", "<S-Tab>", [[<C-\><C-n>gT]])
+vim.api.nvim_create_autocmd("TabLeave", {
+	callback = function()
+		vim.g.last_tab = vim.api.nvim_get_current_tabpage()
+	end,
+})
+vim.keymap.set({ "i", "n", "x" }, "<S-Tab>", function()
+	if vim.g.last_tab and vim.api.nvim_tabpage_is_valid(vim.g.last_tab) then
+		vim.api.nvim_set_current_tabpage(vim.g.last_tab)
+	end
+end, { silent = true })
+vim.keymap.set({ "n", "x" }, "<leader><Tab>", ":tab split<CR>", { silent = true })
+vim.keymap.set("t", "<S-Tab>", [[<C-\><C-n>gt]])
 vim.keymap.set("n", "U", "<C-r>")
 vim.keymap.set("n", "<C-r>", "U") -- C-restore
 vim.keymap.set("i", "<C-BS>", "<C-w>")
@@ -720,7 +728,7 @@ require("lazy").setup({
 							name = "[No Name]"
 							editable = false
 						end
-						if total_tabs > 3 then
+						if total_tabs > 2 then
 							name = tabnr .. ": " .. name
 						end
 						local modified = vim.bo[bufnr].modified
@@ -1302,8 +1310,8 @@ require("lazy").setup({
 			opts = {
 				keymap = {
 					["<CR>"] = { "accept", "fallback" },
-					["<Tab>"] = { "snippet_forward", "fallback" },
-					["<S-Tab>"] = { "snippet_backward", "fallback" },
+					["<Tab>"] = false, --{ "snippet_forward", "fallback" },
+					["<S-Tab>"] = false, --{ "snippet_backward", "fallback" },
 					-- :h ins-completion :h blink-cmp-config-keymap
 					preset = "default",
 				},

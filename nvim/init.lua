@@ -761,7 +761,8 @@ require("lazy").setup({
 						local win = vim.api.nvim_tabpage_get_win(tab)
 						local bufnr = vim.api.nvim_win_get_buf(win)
 						local buf_name = vim.api.nvim_buf_get_name(bufnr)
-						local name = vim.fn.fnamemodify(buf_name, ":.")
+						local modifier = vim.bo[bufnr].buftype == "terminal" and ":t" or ":."
+						local name = vim.fn.fnamemodify(buf_name, modifier)
 						local editable = true
 						if name == "" then
 							name = vim.bo[bufnr].buftype
@@ -1127,9 +1128,9 @@ require("lazy").setup({
 					capabilities = capabilities,
 					settings = {
 						Lua = {
-							workspace = {
-								library = vim.api.nvim_get_runtime_file("", true),
-							},
+							-- workspace = {    -- lazydev should handle this
+							-- 	library = vim.api.nvim_get_runtime_file("", true),
+							-- },
 							telemetry = { enable = false },
 						},
 					},

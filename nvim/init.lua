@@ -287,13 +287,19 @@ vim.keymap.set({ "i", "n" }, "<C-/>", function()
 		end
 	end
 	if not term then
-		vim.cmd("silent! split")
+		local cols = vim.g.terminal_cols or vim.o.columns / 2.5
+		local rows = vim.g.terminal_rows or vim.o.lines / 2.5
+		local orientation = cols < vim.o.columns / 1.25 and "v" or ""
+		local size = orientation == "v" and cols or rows
+		vim.cmd(string.format("silent! %d%ssplit", size, orientation))
 		if vim.api.nvim_buf_is_valid(vim.g.last_term) then
 			vim.api.nvim_set_current_buf(vim.g.last_term)
 		else
 			vim.cmd("terminal")
 		end
 	else
+		vim.g.terminal_cols = vim.api.nvim_win_get_width(term)
+		vim.g.terminal_rows = vim.api.nvim_win_get_height(term)
 		vim.api.nvim_win_close(term, true)
 	end
 end)
@@ -315,6 +321,16 @@ vim.keymap.set("t", "<C-w><C-w>", function()
 				break
 			end
 		end
+	end
+end)
+vim.keymap.set("n", "<C-w>z", function()
+	local cols = vim.api.nvim_win_get_width(0)
+	if cols < vim.o.columns / 1.25 then
+		vim.cmd("wincmd K")
+		vim.cmd(string.format("resize %d", vim.o.lines - vim.o.lines / 2.5))
+	else
+		vim.cmd("wincmd H")
+		vim.cmd(string.format("vertical resize %d", vim.o.columns - vim.o.columns / 2.5))
 	end
 end)
 

@@ -23,8 +23,12 @@ setopt hist_reduce_blanks
 
 source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
 source ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+bindkey -v
+bindkey -M viins '^?' backward-delete-char
+bindkey -M viins '^H' backward-delete-char
+
 bindkey '^L' autosuggest-accept
-bindkey '^W' forward-word
 ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 
 bindkey '^[[23~' beginning-of-line # cat -v

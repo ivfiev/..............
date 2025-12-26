@@ -422,7 +422,7 @@ vim.opt.rtp:prepend(lazypath)
 -- setup all the plugin shite
 require("lazy").setup({
 
-	ui = { border = "rounded" },
+	ui = { border = "rounded", backdrop = 100 },
 
 	spec = {
 
@@ -1044,7 +1044,7 @@ require("lazy").setup({
 		{
 			"neovim/nvim-lspconfig",
 			dependencies = {
-				{ "mason-org/mason.nvim", opts = {} },
+				{ "mason-org/mason.nvim", opts = { ui = { backdrop = 100 } } },
 				"mason-org/mason-lspconfig.nvim",
 				"WhoIsSethDaniel/mason-tool-installer.nvim",
 				-- { "j-hui/fidget.nvim",    enabled = false, opts = {} },

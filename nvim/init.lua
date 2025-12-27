@@ -141,7 +141,7 @@ end
 vim.keymap.set({ "i", "n", "x" }, "<S-Tab>", prev_tab)
 vim.keymap.set("t", "<S-Tab>", prev_tab)
 vim.keymap.set({ "n", "x" }, "<leader><Tab>", ":tab split<CR>", { silent = true })
-vim.keymap.set("n", "U", "<C-r>")
+vim.keymap.set("n", "U", "<C-r>") -- redo
 vim.keymap.set("n", "<C-r>", "U") -- C-restore
 vim.keymap.set("i", "<C-BS>", "<C-w>")
 
@@ -266,15 +266,15 @@ vim.keymap.set("n", "<leader>t", function()
 end, { silent = true })
 vim.keymap.set("t", "<S-Esc>", [[<C-\><C-n>]], { silent = true })
 vim.keymap.set("t", "<C-o>", [[<C-\><C-n>:b#<Cr>]], { silent = true })
-vim.api.nvim_create_autocmd({ "TermOpen", "BufEnter", "TabEnter" }, {
+vim.api.nvim_create_autocmd({ "TermOpen", "BufEnter", "TabEnter", "WinResized" }, {
 	pattern = "*",
 	callback = function()
-		if vim.opt.buftype:get() == "terminal" then
-			vim.g.last_term = vim.api.nvim_get_current_buf()
-			vim.schedule(function()
+		vim.schedule(function()
+			if vim.opt.buftype:get() == "terminal" then
+				vim.g.last_term = vim.api.nvim_get_current_buf()
 				vim.cmd("startinsert")
-			end)
-		end
+			end
+		end)
 	end,
 })
 vim.keymap.set({ "i", "n" }, "<C-/>", function()
@@ -306,31 +306,21 @@ end)
 vim.keymap.set("t", "<C-/>", function()
 	local ws = vim.api.nvim_tabpage_list_wins(vim.api.nvim_get_current_tabpage())
 	if #ws > 1 then
+		vim.g.terminal_cols = vim.api.nvim_win_get_width(0)
+		vim.g.terminal_rows = vim.api.nvim_win_get_height(0)
 		vim.cmd("close")
 	end
 end)
-vim.keymap.set("t", "<C-w><C-w>", function()
-	local tab = vim.api.nvim_get_current_tabpage()
-	local ws = vim.api.nvim_tabpage_list_wins(tab)
-	local win = vim.api.nvim_get_current_win()
-	for _, w in ipairs(ws) do
-		if w ~= win then
-			local cfg = vim.api.nvim_win_get_config(w)
-			if cfg.relative == "" then
-				vim.api.nvim_set_current_win(w)
-				break
-			end
+vim.keymap.set("t", "<C-w>", [[<C-\><C-n><C-w>]])
+vim.keymap.set({ "t", "n" }, "<C-w>z", function()
+	local r = tonumber(vim.fn.getcharstr())
+	if r and 1 <= r and r <= 9 then
+		local is_vertical = vim.api.nvim_win_get_width(0) < vim.o.columns - 3
+		if is_vertical then
+			vim.cmd(string.format("vertical resize %d", r / 10.0 * vim.o.columns))
+		else
+			vim.cmd(string.format("resize %d", r / 10.0 * vim.o.lines))
 		end
-	end
-end)
-vim.keymap.set("n", "<C-w>z", function()
-	local cols = vim.api.nvim_win_get_width(0)
-	if cols < vim.o.columns / 1.25 then
-		vim.cmd("wincmd K")
-		vim.cmd(string.format("resize %d", vim.o.lines - vim.o.lines / 2.5))
-	else
-		vim.cmd("wincmd H")
-		vim.cmd(string.format("vertical resize %d", vim.o.columns - vim.o.columns / 2.5))
 	end
 end)
 
@@ -437,11 +427,11 @@ vim.opt.rtp:prepend(lazypath)
 
 -- setup all the plugin shite
 require("lazy").setup({
-
 	ui = { border = "rounded", backdrop = 100 },
+	install = { colorscheme = { "tokyonight-night" } },
+	checker = { enabled = false },
 
 	spec = {
-
 		{
 			"folke/tokyonight.nvim",
 			lazy = false,
@@ -488,6 +478,16 @@ require("lazy").setup({
 				})
 				vim.cmd([[colorscheme tokyonight-night]])
 			end,
+		},
+
+		{
+			"catgoose/nvim-colorizer.lua",
+			event = "BufReadPre",
+			opts = {
+				user_default_options = {
+					names = false,
+				},
+			},
 		},
 
 		{
@@ -769,11 +769,10 @@ require("lazy").setup({
 				)
 				local function muh_tabs()
 					local cur_tab = vim.fn.tabpagenr()
-					local total_tabs = vim.fn.tabpagenr("$")
 					local tabpages = vim.api.nvim_list_tabpages()
+					local total_tabs = #tabpages
 					local tabline_content = { "%#LualineFilenameInactive#%*" }
-					for tabnr = 1, total_tabs do
-						local tab = tabpages[tabnr]
+					for tabnr, tab in ipairs(tabpages) do
 						local win = vim.api.nvim_tabpage_get_win(tab)
 						local bufnr = vim.api.nvim_win_get_buf(win)
 						local buf_name = vim.api.nvim_buf_get_name(bufnr)
@@ -919,6 +918,7 @@ require("lazy").setup({
 							nowait = true,
 						},
 						mappings = {
+							["<esc>"] = "close_window",
 							["l"] = "open",
 							["h"] = "open",
 							["<C-l>"] = "open",
@@ -930,7 +930,7 @@ require("lazy").setup({
 					},
 					filesystem = {
 						window = {
-							position = "float",
+							position = "current",
 						},
 						follow_current_file = {
 							enabled = true,
@@ -1626,8 +1626,4 @@ require("lazy").setup({
 			end,
 		},
 	},
-
-	install = { colorscheme = { "habamax" } },
-	-- automatically check for plugin updates
-	checker = { enabled = false },
 })

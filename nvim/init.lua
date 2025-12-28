@@ -20,7 +20,7 @@ vim.opt.winborder = "single"
 vim.opt.shortmess:append("I")
 vim.opt.showtabline = 0
 vim.opt.laststatus = 3
-vim.opt.sessionoptions = "buffers,tabpages,folds" -- options(!), curdir
+vim.opt.sessionoptions = "buffers,folds" -- options(!), curdir, tabpages
 
 vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
@@ -752,54 +752,38 @@ require("lazy").setup({
 				theme.normal.c.bg = vim.g.BG
 				theme.inactive.c.bg = vim.g.BG
 				local lineNrHl = vim.api.nvim_get_hl(0, { name = "LineNr", link = false })
-				local cursorlineNrHl = vim.api.nvim_get_hl(0, { name = "CursorLineNr", link = false })
-				vim.api.nvim_set_hl(
-					0,
-					"LualineFilenameActive",
-					{ fg = cursorlineNrHl.fg, bold = true, bg = theme.normal.c.bg }
-				)
-				vim.api.nvim_set_hl(0, "LualineFilenameInactive", { fg = lineNrHl.fg, bg = theme.normal.c.bg })
-				vim.api.nvim_set_hl(
-					0,
-					"LualineFilenameActiveModified",
-					{ fg = cursorlineNrHl.fg, bold = true, bg = theme.normal.c.bg, underline = true }
-				)
-				vim.api.nvim_set_hl(
-					0,
-					"LualineFilenameInactiveModified",
-					{ fg = lineNrHl.fg, bg = theme.normal.c.bg, underline = true }
-				)
-				local function muh_tabs()
-					local cur_tab = vim.fn.tabpagenr()
-					local tabpages = vim.api.nvim_list_tabpages()
-					local total_tabs = #tabpages
-					local tabline_content = { "%#LualineFilenameInactive#%*" }
-					for tabnr, tab in ipairs(tabpages) do
-						local win = vim.api.nvim_tabpage_get_win(tab)
-						local bufnr = vim.api.nvim_win_get_buf(win)
-						local buf_name = vim.api.nvim_buf_get_name(bufnr)
-						local modifier = vim.bo[bufnr].buftype == "terminal" and ":t" or ":."
-						local name = vim.fn.fnamemodify(buf_name, modifier)
-						local editable = true
-						if name == "" then
-							name = vim.bo[bufnr].buftype
-							editable = false
+				vim.api.nvim_set_hl(0, "LualineCode", { fg = lineNrHl.fg, bg = theme.normal.c.bg })
+
+				local function code()
+					local wins = vim.api.nvim_tabpage_list_wins(0)
+					for _, w in ipairs(wins) do
+						if
+							vim.api.nvim_win_get_config(w).relative == ""
+							and vim.api.nvim_win_get_position(w)[1] > 0
+						then
+							return ""
 						end
-						if name == "" then
-							name = "[No Name]"
-							editable = false
-						end
-						if total_tabs > 2 then
-							name = tabnr .. ": " .. name
-						end
-						local modified = vim.bo[bufnr].modified
-						local hl = (tabnr == cur_tab) and "%#LualineFilenameActive" or "%#LualineFilenameInactive"
-						if modified and editable then
-							hl = hl .. "Modified"
-						end
-						table.insert(tabline_content, hl .. "#" .. name .. "%*" .. "%#LualineFilenameInactive#  %*")
 					end
-					return table.concat(tabline_content)
+					local win = wins[1]
+					local buf = vim.api.nvim_win_get_buf(win)
+					if vim.bo[buf].buftype ~= "" then
+						return ""
+					end
+					local total_lines = vim.api.nvim_buf_line_count(buf)
+					local linenr = 1 + vim.fn.line("w$", win)
+					if linenr <= total_lines then
+						local padding = total_lines < 1000 and 4
+							or total_lines < 10000 and 5
+							or total_lines < 100000 and 6
+							or total_lines < 1000000 and 7
+							or 8
+						local nr = tostring(linenr)
+						nr = string.rep(" ", padding - #nr) .. nr
+						local line = vim.api.nvim_buf_get_lines(buf, linenr - 1, linenr, false)[1]
+						line = line:gsub("\t", string.rep(" ", vim.o.tabstop))
+						return "%#LualineCode#" .. nr .. " " .. line .. "%*"
+					end
+					return ""
 				end
 
 				require("lualine").setup({
@@ -811,15 +795,26 @@ require("lazy").setup({
 					sections = {
 						lualine_a = {
 							{
-								muh_tabs,
+								code,
 							},
 						},
 						lualine_b = {},
 						lualine_c = {},
 						lualine_x = {
 							"diagnostics",
-							"lsp_status",
 							"branch",
+							{
+								"filename",
+								fmt = function()
+									if vim.bo.buftype == "quickfix" then
+										return "quickfix"
+									end
+									if vim.bo.buftype == "terminal" then
+										return vim.fn.expand("%:t")
+									end
+									return vim.fn.expand("%:.")
+								end,
+							},
 							{
 								"filetype",
 								icon_only = true,
@@ -852,6 +847,7 @@ require("lazy").setup({
 						popup("msg_show", nil, "^mark line"),
 						popup("msg_show", nil, "^[ ]+#[ ]+cmd history"),
 						popup("msg_show", nil, "^Type Name Content"),
+						popup("msg_show", nil, "^Tab page"),
 						popup("msg_show", "list_cmd", ""),
 					},
 					presets = {
@@ -879,6 +875,7 @@ require("lazy").setup({
 				})
 				vim.keymap.set("n", "<leader>na", ":NoiceAll<Cr>", { silent = true })
 				vim.keymap.set("n", "<leader>nd", ":NoiceDismiss<Cr>", { silent = true })
+				vim.keymap.set("n", "<leader>nt", ":tabs<Cr>", { silent = true })
 				vim.api.nvim_create_autocmd("RecordingEnter", {
 					callback = function()
 						local reg = vim.fn.reg_recording()
@@ -1017,29 +1014,6 @@ require("lazy").setup({
 					end,
 				},
 			},
-		},
-
-		{
-			"lukas-reineke/indent-blankline.nvim",
-			main = "ibl",
-			config = function()
-				local highlight = {
-					"c3",
-				}
-				local hooks = require("ibl.hooks")
-				hooks.register(hooks.type.HIGHLIGHT_SETUP, function()
-					vim.api.nvim_set_hl(0, "c3", { fg = "#182430" })
-				end)
-				require("ibl").setup({
-					indent = {
-						highlight = highlight,
-						char = "┆",
-					},
-					scope = {
-						enabled = false,
-					},
-				})
-			end,
 		},
 
 		{

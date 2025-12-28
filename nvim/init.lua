@@ -805,15 +805,7 @@ require("lazy").setup({
 							"branch",
 							{
 								"filename",
-								fmt = function()
-									if vim.bo.buftype == "quickfix" then
-										return "quickfix"
-									end
-									if vim.bo.buftype == "terminal" then
-										return vim.fn.expand("%:t")
-									end
-									return vim.fn.expand("%:.")
-								end,
+								path = 1,
 							},
 							{
 								"filetype",

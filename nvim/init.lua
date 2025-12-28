@@ -42,6 +42,7 @@ vim.keymap.set({ "n", "x" }, "q", "<Nop>")
 vim.keymap.set("n", "<leader>q", "q") -- @ in v already works
 vim.keymap.set("n", "qi", "gi")
 vim.keymap.set("n", "qv", "gv")
+vim.keymap.set("n", "qg", ":g//norm! 0/<Left><Left><Left><Left><Left><Left><Left><Left><Left>", { silent = false })
 vim.keymap.set(
 	"n",
 	"qr",
@@ -120,9 +121,10 @@ vim.keymap.set({ "x" }, ">", ">gv")
 vim.keymap.set({ "x" }, "<", "<gv")
 
 vim.keymap.set({ "n", "i", "x" }, "<C-s>", "<Cmd>:w<CR><Esc>", { silent = true })
-vim.keymap.set({ "x" }, "<C-c>", function()
-	vim.cmd('normal! "+y')
-end)
+vim.keymap.set({ "n", "x" }, "<C-p>", [["0p]])
+vim.keymap.set({ "i" }, "<C-p>", [[<Esc>"0pa]])
+vim.keymap.set({ "n", "x" }, "<C-S-p>", [["0P]])
+vim.keymap.set({ "i" }, "<C-S-p>", [[<Esc>"0Pa]])
 
 vim.keymap.set({ "n", "i" }, "<X1Mouse>", "<C-o>")
 vim.keymap.set({ "n", "i" }, "<X2Mouse>", "<C-i>")
@@ -133,17 +135,17 @@ vim.api.nvim_create_autocmd("TabLeave", {
 		vim.g.last_tab = vim.api.nvim_get_current_tabpage()
 	end,
 })
-local function prev_tab()
+vim.keymap.set({ "i", "n", "x", "t" }, "<S-Tab>", function()
 	if vim.g.last_tab and vim.api.nvim_tabpage_is_valid(vim.g.last_tab) then
 		vim.api.nvim_set_current_tabpage(vim.g.last_tab)
 	end
-end
-vim.keymap.set({ "i", "n", "x" }, "<S-Tab>", prev_tab)
-vim.keymap.set("t", "<S-Tab>", prev_tab)
+end)
 vim.keymap.set({ "n", "x" }, "<leader><Tab>", ":tab split<CR>", { silent = true })
 vim.keymap.set("n", "U", "<C-r>") -- redo
 vim.keymap.set("n", "<C-r>", "U") -- C-restore
 vim.keymap.set("i", "<C-BS>", "<C-w>")
+vim.keymap.set({ "i", "x", "n" }, "<C-a>", "<C-^>")
+vim.keymap.set({ "t" }, "<C-a>", [[<C-\><C-n><C-^>]])
 
 vim.keymap.set({ "x", "n" }, "<C-u>", "<C-u>zz")
 vim.keymap.set({ "x", "n" }, "<C-d>", "<C-d>zz")

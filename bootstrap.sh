@@ -32,6 +32,7 @@ cp -r ~/dots/yazi ~/.config
 cp ~/dots/.zshrc ~/
 cp ~/dots/toggle-waybar.sh ~/
 cp ~/dots/random-wallpapers.sh ~/
+cp ~/dots/select-wallpaper.sh ~/
 cp ~/dots/exec-past-cmd.zsh ~/
 cp ~/dots/wofi-mullvad-switch-host.py ~/
 cp ~/dots/wlogout.sh ~/

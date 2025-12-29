@@ -1,5 +1,5 @@
 allow_images = true
-image_size = 20
+image_size = 48
 no_actions = true
 prompt=
 insensitive = true

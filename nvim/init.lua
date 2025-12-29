@@ -128,6 +128,19 @@ vim.keymap.set({ "i" }, "<C-S-p>", [[<Esc>"0Pa]])
 
 vim.keymap.set({ "n", "i" }, "<X1Mouse>", "<C-o>")
 vim.keymap.set({ "n", "i" }, "<X2Mouse>", "<C-i>")
+vim.api.nvim_create_autocmd("BufReadPost", { -- { "BufReadPost", "BufNewFile" }
+	callback = function(ev)
+		if vim.bo[ev.buf].buftype == "" then
+			vim.keymap.set({ "n", "i", "x" }, "<ScrollWheelUp>", function()
+				vim.cmd("norm! 3kzz")
+			end, { buffer = ev.buf })
+			vim.keymap.set({ "n", "i", "x" }, "<ScrollWheelDown>", function()
+				vim.cmd("norm! 3jzz")
+			end, { buffer = ev.buf })
+		end
+	end,
+})
+
 vim.keymap.set({ "n", "x" }, "]t", "gt")
 vim.keymap.set({ "n", "x" }, "[t", "gT")
 vim.api.nvim_create_autocmd("TabLeave", {

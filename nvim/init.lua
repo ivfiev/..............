@@ -685,7 +685,7 @@ require("lazy").setup({
 						},
 						buffers = {
 							sort_mru = true,
-							ignore_current_buffer = true,
+							ignore_current_buffer = false,
 							mappings = {
 								i = {
 									["<C-x>"] = actions.delete_buffer,
@@ -756,15 +756,18 @@ require("lazy").setup({
 
 				local function code()
 					local wins = vim.api.nvim_tabpage_list_wins(0)
+					local win = nil
+					local win_cfg = nil
 					for _, w in ipairs(wins) do
-						if
-							vim.api.nvim_win_get_config(w).relative == ""
-							and vim.api.nvim_win_get_position(w)[1] > 0
-						then
-							return ""
+						win_cfg = vim.api.nvim_win_get_config(w)
+						if win_cfg.relative == "" and win_cfg.split == "left" then
+							win = w
+							break
 						end
 					end
-					local win = wins[1]
+					if not win then
+						return ""
+					end
 					local buf = vim.api.nvim_win_get_buf(win)
 					if vim.bo[buf].buftype ~= "" then
 						return ""
@@ -780,11 +783,21 @@ require("lazy").setup({
 						local nr = tostring(linenr)
 						nr = string.rep(" ", padding - #nr) .. nr
 						local line = vim.api.nvim_buf_get_lines(buf, linenr - 1, linenr, false)[1]
-						line = line:gsub("\t", string.rep(" ", vim.o.tabstop))
+						line = line:gsub("\t", string.rep(" ", vim.bo[buf].tabstop))
+						local max_width = math.max(1, win_cfg.width - 50)
+						if string.len(line) > max_width then
+							line = line:sub(1, max_width)
+						end
 						return "%#LualineCode#" .. nr .. " " .. line .. "%*"
 					end
 					return ""
 				end
+
+				vim.api.nvim_set_hl(
+					0,
+					"LualineFileModified",
+					{ fg = theme.normal.c.fg, bg = theme.normal.c.bg, underline = true }
+				)
 
 				require("lualine").setup({
 					options = {
@@ -806,6 +819,29 @@ require("lazy").setup({
 							{
 								"filename",
 								path = 1,
+								symbols = {
+									modified = "",
+									readonly = "[readonly]",
+									unnamed = "[unnamed]",
+									newfile = "[newfile]",
+								},
+								fmt = function(name)
+									if vim.bo.buftype ~= "" and vim.api.nvim_buf_get_name(0) == "" then
+										return vim.bo.buftype
+									end
+									if vim.bo.modified then
+										return "%#LualineCode#%*%#LualineFileModified#"
+											.. name:sub(1, -2)
+											.. "%*%#LualineCode#%*"
+									end
+									if vim.bo.buftype == "quickfix" then
+										return "quickfix"
+									end
+									if vim.bo.buftype == "terminal" then
+										return vim.fn.fnamemodify(name, ":t")
+									end
+									return name
+								end,
 							},
 							{
 								"filetype",
@@ -831,7 +867,7 @@ require("lazy").setup({
 				end
 				require("noice").setup({
 					routes = {
-						skip("msg_show", "lua_error", "lsp_status.lua:"),
+						-- skip("msg_show", "lua_error", "lsp_status.lua:"),
 						skip("msg_show", "", "B written"),
 						skip("msg_show", "", '^".+L, .+B$'),
 						skip("notify", "error", "telescope"),

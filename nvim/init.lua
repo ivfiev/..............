@@ -20,7 +20,7 @@ vim.opt.winborder = "single"
 vim.opt.shortmess:append("I")
 vim.opt.showtabline = 0
 vim.opt.laststatus = 3
-vim.opt.sessionoptions = "buffers,folds" -- options(!), curdir, tabpages
+vim.opt.sessionoptions = "buffers,folds,tabpages" -- options(!), curdir, tabpages
 
 vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
@@ -752,53 +752,8 @@ require("lazy").setup({
 				local theme = require("lualine.themes.tokyonight")
 				theme.normal.c.bg = vim.g.BG
 				theme.inactive.c.bg = vim.g.BG
-				local lineNrHl = vim.api.nvim_get_hl(0, { name = "LineNr", link = false })
-				vim.api.nvim_set_hl(0, "LualineCode", { fg = lineNrHl.fg, bg = theme.normal.c.bg })
-
-				local function code()
-					local wins = vim.api.nvim_tabpage_list_wins(0)
-					local win = nil
-					local win_cfg = nil
-					for _, w in ipairs(wins) do
-						win_cfg = vim.api.nvim_win_get_config(w)
-						if win_cfg.relative == "" and win_cfg.split == "left" then
-							win = w
-							break
-						end
-					end
-					if not win then
-						return ""
-					end
-					local buf = vim.api.nvim_win_get_buf(win)
-					if vim.bo[buf].buftype ~= "" then
-						return ""
-					end
-					local total_lines = vim.api.nvim_buf_line_count(buf)
-					local linenr = 1 + vim.fn.line("w$", win)
-					if linenr <= total_lines then
-						local padding = total_lines < 1000 and 4
-							or total_lines < 10000 and 5
-							or total_lines < 100000 and 6
-							or total_lines < 1000000 and 7
-							or 8
-						local nr = tostring(linenr)
-						nr = string.rep(" ", padding - #nr) .. nr
-						local line = vim.api.nvim_buf_get_lines(buf, linenr - 1, linenr, false)[1]
-						line = line:gsub("\t", string.rep(" ", vim.bo[buf].tabstop))
-						local max_width = math.max(1, win_cfg.width - 50)
-						if string.len(line) > max_width then
-							line = line:sub(1, max_width)
-						end
-						return "%#LualineCode#" .. nr .. " " .. line .. "%*"
-					end
-					return ""
-				end
-
-				vim.api.nvim_set_hl(
-					0,
-					"LualineFileModified",
-					{ fg = theme.normal.c.fg, bg = theme.normal.c.bg, underline = true }
-				)
+				vim.api.nvim_set_hl(0, "Statusline", { link = "Normal" })
+				vim.api.nvim_set_hl(0, "StatuslineNC", { link = "NormalNC" })
 
 				require("lualine").setup({
 					options = {
@@ -809,7 +764,9 @@ require("lazy").setup({
 					sections = {
 						lualine_a = {
 							{
-								code,
+								"tabs",
+								show_modified_status = false,
+								tabs_color = { active = "CursorLineNr", inactive = "LineNr" },
 							},
 						},
 						lualine_b = {},
@@ -821,25 +778,14 @@ require("lazy").setup({
 								"filename",
 								path = 1,
 								symbols = {
-									modified = "",
+									modified = "[+]",
 									readonly = "[readonly]",
 									unnamed = "[unnamed]",
 									newfile = "[newfile]",
 								},
 								fmt = function(name)
-									if vim.bo.buftype ~= "" and vim.api.nvim_buf_get_name(0) == "" then
+									if vim.bo.buftype ~= "" then
 										return vim.bo.buftype
-									end
-									if vim.bo.modified then
-										return "%#LualineCode#%*%#LualineFileModified#"
-											.. name:sub(1, -2)
-											.. "%*%#LualineCode#%*"
-									end
-									if vim.bo.buftype == "quickfix" then
-										return "quickfix"
-									end
-									if vim.bo.buftype == "terminal" then
-										return vim.fn.fnamemodify(name, ":t")
 									end
 									return name
 								end,

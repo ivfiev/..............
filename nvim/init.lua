@@ -765,31 +765,31 @@ require("lazy").setup({
 						lualine_a = {
 							{
 								"tabs",
-								show_modified_status = false,
+								max_length = function()
+									return vim.o.columns - 50
+								end,
+								mode = 1,
+								path = 0,
 								tabs_color = { active = "CursorLineNr", inactive = "LineNr" },
+								show_modified_status = false,
+								fmt = function(name, ctx)
+									local win = vim.api.nvim_tabpage_get_win(ctx.tabId)
+									local buf = vim.api.nvim_win_get_buf(win)
+									if vim.bo[buf].buftype ~= "" then
+										name = vim.bo[buf].buftype
+									elseif vim.bo[buf].modified then
+										name = name .. " ✎"
+									end
+									return ctx.tabnr .. " " .. name
+								end,
 							},
 						},
 						lualine_b = {},
 						lualine_c = {},
 						lualine_x = {
 							"diagnostics",
+							"lsp_status",
 							"branch",
-							{
-								"filename",
-								path = 1,
-								symbols = {
-									modified = "[+]",
-									readonly = "[readonly]",
-									unnamed = "[unnamed]",
-									newfile = "[newfile]",
-								},
-								fmt = function(name)
-									if vim.bo.buftype ~= "" then
-										return vim.bo.buftype
-									end
-									return name
-								end,
-							},
 							{
 								"filetype",
 								icon_only = true,

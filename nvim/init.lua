@@ -116,11 +116,11 @@ vim.opt.confirm = true
 
 vim.keymap.set({ "n", "x", "o" }, "L", "$")
 vim.keymap.set({ "n", "x", "o" }, "H", "^")
-vim.keymap.set("n", "ZZ", "<Cmd>wqa<CR>")
+vim.keymap.set("n", "ZZ", "<Cmd>wqa<CR>", { silent = true })
 vim.keymap.set({ "x" }, ">", ">gv")
 vim.keymap.set({ "x" }, "<", "<gv")
 
-vim.keymap.set({ "n", "i", "x" }, "<C-s>", "<Cmd>:w<CR><Esc>", { silent = true })
+vim.keymap.set({ "n", "i", "x" }, "<C-s>", "<Cmd>w<CR><Esc>", { silent = true })
 vim.keymap.set({ "n", "x" }, "<C-p>", [["0p]])
 vim.keymap.set({ "i" }, "<C-p>", [[<Esc>"0pa]])
 vim.keymap.set({ "n", "x" }, "<C-S-p>", [["0P]])
@@ -128,6 +128,9 @@ vim.keymap.set({ "i" }, "<C-S-p>", [[<Esc>"0Pa]])
 
 vim.keymap.set({ "n", "i" }, "<X1Mouse>", "<C-o>")
 vim.keymap.set({ "n", "i" }, "<X2Mouse>", "<C-i>")
+
+vim.keymap.set({ "n", "x" }, "{", "<Cmd>keepjumps norm! {<CR>", { silent = true })
+vim.keymap.set({ "n", "x" }, "}", "<Cmd>keepjumps norm! }<CR>", { silent = true })
 
 vim.keymap.set({ "n", "x" }, "]t", "gt")
 vim.keymap.set({ "n", "x" }, "[t", "gT")
@@ -661,7 +664,7 @@ require("lazy").setup({
 						mappings = {
 							i = {
 								["<Esc>"] = actions.close,
-								["<Tab>"] = actions.select_tab,
+								["<S-Tab>"] = actions.select_tab,
 							},
 						},
 						path_display = { "truncate" },
@@ -1496,34 +1499,6 @@ require("lazy").setup({
 				vim.api.nvim_set_hl(0, "DapStopped", { fg = "#98c379" })
 				vim.api.nvim_set_hl(0, "DapStoppedLine", { bg = "#002244" })
 
-				vim.keymap.set("n", "<F5>", dap.continue)
-				vim.keymap.set("n", "<F2>", dap.toggle_breakpoint)
-				vim.keymap.set("n", "<C-F2>", function()
-					dap.set_breakpoint(vim.fn.input("Condition: "))
-				end)
-				vim.keymap.set("n", "<F10>", dap.step_over)
-				vim.keymap.set("n", "<F11>", dap.step_into)
-				vim.keymap.set("n", "<S-F11>", dap.step_out)
-				vim.keymap.set("n", "<S-F5>", function()
-					dap.terminate()
-					dapui.close()
-				end)
-				-- vim.keymap.set("n", "<leader>du", function()
-				--     dapui.toggle()
-				-- end, { desc = "Toggle DAP UI" })
-
-				local widgets = require("dap.ui.widgets")
-				vim.keymap.set("n", "<leader>dv", function()
-					widgets.centered_float(widgets.scopes) -- just current frame scopes
-				end, { desc = "DAP: show scopes for current frame ONLY" })
-
-				vim.keymap.set({ "n", "v" }, "<F1>", function()
-					require("dapui").eval()
-					vim.schedule(function()
-						send_key("<C-w>w<CR>", "n")
-					end)
-				end)
-
 				dapui.setup({
 					icons = {
 						expanded = "▼",
@@ -1544,6 +1519,8 @@ require("lazy").setup({
 					},
 				})
 
+				vim.keymap.set("n", "<F2>", dap.toggle_breakpoint)
+
 				local exns = Toggle:new(false, function()
 					require("dap").set_exception_breakpoints({})
 					vim.notify("Exceptions off", vim.log.levels.INFO)
@@ -1552,17 +1529,55 @@ require("lazy").setup({
 					vim.notify("Exceptions on", vim.log.levels.INFO)
 				end)
 
+				local widgets = require("dap.ui.widgets")
+				local scopes = Toggle:new(false, function()
+					if vim.api.nvim_win_get_config(0).relative ~= "" then
+						vim.cmd(":q")
+					end
+				end, function()
+					widgets.centered_float(widgets.scopes) -- just current frame scopes
+				end)
+
+				vim.api.nvim_create_user_command("DebugKeymapsOn", function()
+					vim.keymap.set("n", "<C-n>", dap.continue)
+					vim.keymap.set("n", "b", dap.toggle_breakpoint)
+					vim.keymap.set("n", "n", dap.step_over)
+					vim.keymap.set("n", "N", dap.step_into)
+					vim.keymap.set("n", "<BS>", dap.step_out)
+					vim.keymap.set("n", "X", function()
+						dap.terminate()
+						dapui.close()
+					end)
+					vim.keymap.set("n", "e", function()
+						exns:toggle()
+					end)
+					vim.keymap.set("n", "s", function()
+						scopes:toggle()
+					end)
+				end, {})
+				vim.api.nvim_create_user_command("DebugKeymapsOff", function()
+					pcall(vim.keymap.del, "n", "<C-n>")
+					pcall(vim.keymap.del, "n", "n")
+					pcall(vim.keymap.del, "n", "N")
+					pcall(vim.keymap.del, "n", "<BS>")
+					pcall(vim.keymap.del, "n", "X")
+					pcall(vim.keymap.del, "n", "b")
+					pcall(vim.keymap.del, "n", "e")
+					pcall(vim.keymap.del, "n", "s")
+				end, {})
+
 				dap.listeners.after.event_initialized["on_start"] = function()
-					-- hydra:activate()
+					vim.cmd("DebugKeymapsOn")
 					print("Debugger started!")
 				end
 
 				dap.listeners.before.event_terminated["on_end"] = function()
-					-- hydra:kill()
+					vim.cmd("DebugKeymapsOff")
 					print("Debugger terminated.")
 				end
 
 				dap.listeners.before.event_exited["on_exit"] = function()
+					vim.cmd("DebugKeymapsOff")
 					print("Target process exited.")
 				end
 			end,

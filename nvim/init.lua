@@ -1247,6 +1247,9 @@ require("lazy").setup({
 					gofumpt = {
 						args = { "-extra" },
 					},
+					black = {
+						prepend_args = { "--line-length=140" },
+					},
 				},
 			},
 		},

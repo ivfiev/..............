@@ -94,7 +94,7 @@ vim.opt.wrap = false
 vim.opt.splitbelow = true
 vim.opt.splitright = true
 vim.opt.termguicolors = true
-vim.opt.signcolumn = "yes"
+vim.opt.signcolumn = "yes:1"
 vim.opt.showmode = false
 vim.opt.mouse = "a"
 
@@ -155,6 +155,7 @@ vim.keymap.set({ "x", "n" }, "<C-u>", "<C-u>zz")
 vim.keymap.set({ "x", "n" }, "<C-d>", "<C-d>zz")
 vim.keymap.set("n", "zz", "mz0zz`z")
 
+-- random autocmds
 vim.api.nvim_set_hl(0, "OnYankHighlight", { bg = "#FF4400" })
 vim.api.nvim_create_autocmd("TextYankPost", {
 	callback = function()
@@ -162,6 +163,15 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 			higroup = "OnYankHighlight",
 			timeout = 150,
 		})
+	end,
+})
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = "help",
+	command = "wincmd L",
+})
+vim.api.nvim_create_autocmd("FileType", {
+	callback = function()
+		vim.opt_local.formatoptions:remove({ "c", "r", "o" })
 	end,
 })
 
@@ -484,16 +494,6 @@ require("lazy").setup({
 				})
 				vim.cmd([[colorscheme tokyonight-night]])
 			end,
-		},
-
-		{
-			"catgoose/nvim-colorizer.lua",
-			event = "BufReadPre",
-			opts = {
-				user_default_options = {
-					names = false,
-				},
-			},
 		},
 
 		{

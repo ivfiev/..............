@@ -11,8 +11,8 @@ vim.keymap.set({ "n", "x" }, ",,", ",")
 vim.opt.number = true
 vim.opt.relativenumber = false
 vim.opt.cursorline = true
-vim.opt.scrolloff = 2
-vim.opt.sidescrolloff = 2
+vim.opt.scrolloff = 5
+vim.opt.sidescrolloff = 5
 vim.opt.cmdheight = 0
 vim.opt.foldmethod = "indent"
 vim.opt.foldlevel = 99
@@ -148,8 +148,10 @@ vim.keymap.set({ "n", "x" }, "<leader><Tab>", ":tab split<CR>", { silent = true 
 vim.keymap.set("n", "U", "<C-r>") -- redo
 vim.keymap.set("n", "<C-r>", "U") -- C-restore
 vim.keymap.set("i", "<C-BS>", "<C-w>")
-vim.keymap.set({ "i", "x", "n" }, "<C-a>", "<C-^>")
-vim.keymap.set({ "t" }, "<C-a>", [[<C-\><C-n><C-^>]])
+
+vim.keymap.set("n", "<C-a>", "<C-^>")
+vim.keymap.set("i", "<C-a>", "<C-o><C-^>")
+vim.keymap.set("t", "<C-a>", [[<C-\><C-n><C-^>]])
 
 vim.keymap.set({ "x", "n" }, "<C-u>", "<C-u>zz")
 vim.keymap.set({ "x", "n" }, "<C-d>", "<C-d>zz")
@@ -615,35 +617,6 @@ require("lazy").setup({
 				vim.keymap.set({ "n", "x", "o" }, "F", ts_repeat_move.builtin_F_expr, { expr = true })
 				vim.keymap.set({ "n", "x", "o" }, "t", ts_repeat_move.builtin_t_expr, { expr = true })
 				vim.keymap.set({ "n", "x", "o" }, "T", ts_repeat_move.builtin_T_expr, { expr = true })
-
-				local group = vim.api.nvim_create_augroup("TsZzWrap", { clear = true })
-				vim.api.nvim_create_autocmd("FileType", {
-					group = group,
-					callback = function(ev)
-						if vim.bo[ev.buf].buftype ~= "" then
-							return
-						end
-						if vim.b[ev.buf].ts_zz_ok then
-							return
-						end
-						vim.b[ev.buf].ts_zz_ok = true
-						vim.defer_fn(function()
-							if not vim.api.nvim_buf_is_valid(ev.buf) or not vim.api.nvim_buf_is_loaded(ev.buf) then
-								return
-							end
-							local zz = { "]f", "[f" }
-							local mappings = vim.api.nvim_buf_get_keymap(0, "n")
-							for _, map in ipairs(mappings) do
-								if map.callback and vim.tbl_contains(zz, map.lhs) then
-									vim.keymap.set("n", map.lhs, function()
-										map.callback()
-										vim.cmd("norm! zz")
-									end, { buffer = ev.buf })
-								end
-							end
-						end, 50)
-					end,
-				})
 			end,
 		},
 
@@ -1410,7 +1383,12 @@ require("lazy").setup({
 		},
 		{
 			"GustavEikaas/easy-dotnet.nvim",
-			dependencies = { "nvim-lua/plenary.nvim", "nvim-telescope/telescope.nvim" },
+			commit = "431d2d41a0f1d5566222720abd5ff568527f3c8b",
+			dependencies = {
+				"nvim-lua/plenary.nvim",
+				"nvim-telescope/telescope.nvim",
+				"Cliffback/netcoredbg-macOS-arm64.nvim",
+			},
 			enabled = IS_WORK,
 			ft = { "cs" },
 			config = function()
@@ -1429,8 +1407,8 @@ require("lazy").setup({
 					},
 					test_runner = {
 						mappings = {
-							run_test_from_buffer = { lhs = "<leader>dr", desc = "run test from buffer" },
-							debug_test = { lhs = "<leader>dd", desc = "debug test" },
+							run_test_from_buffer = { lhs = "<leader>r", desc = "run test from buffer" },
+							debug_test = { lhs = "<leader>d", desc = "debug test" },
 							peek_stack_trace_from_buffer = { lhs = "<leader>p", desc = "peek stack trace from buffer" },
 							filter_failed_tests = { lhs = "<leader>fe", desc = "filter failed tests" },
 							go_to_file = { lhs = "g", desc = "go to file" },
@@ -1445,6 +1423,9 @@ require("lazy").setup({
 							refresh_testrunner = { lhs = "<C-r>", desc = "refresh testrunner" },
 						},
 					},
+					auto_bootstrap_namespace = {
+						type = "file_scoped",
+					},
 				})
 				vim.keymap.set("n", "<leader>DR", ":Dotnet testrunner<CR>", { silent = true })
 				vim.keymap.set("n", "<leader>DB", ":Dotnet build<CR>", { silent = true })
@@ -1457,13 +1438,11 @@ require("lazy").setup({
 			ft = { "cs" },
 			config = function()
 				local dap = require("dap")
-				dap.set_log_level("TRACE")
 				dap.adapters.coreclr = {
 					type = "executable",
 					command = "/Users/filips.ivanovs/.local/share/nvim/mason/bin/netcoredbg",
 					args = { "--interpreter=vscode", "--engineLogging=/tmp/netcoredbg-engine.log" },
 				}
-
 				dap.configurations.cs = {
 					{
 						type = "coreclr",

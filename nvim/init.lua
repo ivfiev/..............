@@ -450,14 +450,24 @@ end
 -- hover
 local hover = Toggle:new(true, vim.diagnostic.open_float, vim.lsp.buf.hover)
 vim.keymap.set("n", "K", function()
+	local has_float = false
+	for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+		local config = vim.api.nvim_win_get_config(win)
+		if config.relative ~= "" and config.focusable then
+			has_float = true
+			break
+		end
+	end
 	local line = vim.api.nvim_win_get_cursor(0)[1] - 1
 	local diags = vim.diagnostic.get(0, { lnum = line })
 	if #diags > 0 then
-		hover:toggle()
-		vim.defer_fn(function()
-			hover:set(true)
-		end, 1000)
-	else
+		if has_float then
+			hover:toggle()
+		else
+			vim.diagnostic.open_float()
+			hover:set(false)
+		end
+	elseif not has_float then
 		vim.lsp.buf.hover()
 	end
 end)

@@ -176,6 +176,20 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.opt_local.formatoptions:remove({ "c", "r", "o" })
 	end,
 })
+vim.api.nvim_create_autocmd("RecordingEnter", {
+	callback = function()
+		local reg = vim.fn.reg_recording()
+		if reg ~= "" then
+			vim.notify("Recording @ '" .. reg .. "'", vim.log.levels.INFO, { Title = "Macro" })
+		end
+	end,
+})
+vim.api.nvim_create_autocmd("RecordingLeave", {
+	callback = function()
+		local reg = vim.fn.reg_recording()
+		vim.notify("Recorded @ '" .. reg .. "'", vim.log.levels.INFO, { Title = "Macro" })
+	end,
+})
 
 -- shadas & sessions
 vim.api.nvim_create_user_command("SessionSave", function()
@@ -232,8 +246,15 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
 })
 
 -- marks
-vim.keymap.set("n", "<leader>m", "m")
-vim.keymap.set("n", "<leader>'", "'")
+vim.keymap.set("n", "M", "m")
+vim.keymap.set("n", "'", function()
+	local mark = vim.fn.getcharstr()
+	if tonumber(mark) ~= nil then
+		vim.cmd("normal! " .. mark .. "gt")
+	else
+		vim.cmd("normal! '" .. mark)
+	end
+end)
 
 -- highlighting
 vim.keymap.set("n", "*", function()
@@ -422,6 +443,24 @@ function Toggle:toggle()
 		self.value = true
 	end
 end
+function Toggle:set(b)
+	self.value = b
+end
+
+-- hover
+local hover = Toggle:new(true, vim.diagnostic.open_float, vim.lsp.buf.hover)
+vim.keymap.set("n", "K", function()
+	local line = vim.api.nvim_win_get_cursor(0)[1] - 1
+	local diags = vim.diagnostic.get(0, { lnum = line })
+	if #diags > 0 then
+		hover:toggle()
+		vim.defer_fn(function()
+			hover:set(true)
+		end, 1000)
+	else
+		vim.lsp.buf.hover()
+	end
+end)
 
 -- setup lazy
 IS_WORK = vim.loop.os_uname().sysname == "Darwin"
@@ -492,6 +531,12 @@ require("lazy").setup({
 						hl.TabLine = { fg = hl.LineNr.fg, bg = BG }
 						hl.TabLineFill = { bg = BG }
 						hl.TabLineSel = { fg = hl.CursorLineNr.fg, bold = true, bg = BG }
+						hl.TelescopeResultsComment = { fg = hl.LineNr.fg, bg = "NONE", italic = true }
+						vim.api.nvim_set_hl(0, "TelescopeMatching", {
+							fg = hl.CursorLineNr.fg,
+							bg = hl.LineNr.fg,
+							bold = true,
+						})
 					end,
 				})
 				vim.cmd([[colorscheme tokyonight-night]])
@@ -640,7 +685,12 @@ require("lazy").setup({
 								["<S-Tab>"] = actions.select_tab,
 							},
 						},
-						path_display = { "truncate" },
+						path_display = {
+							filename_first = {
+								reverse_directories = false,
+							},
+							"truncate",
+						},
 						layout_strategy = "vertical",
 						layout_config = {
 							prompt_position = "bottom",
@@ -827,20 +877,6 @@ require("lazy").setup({
 				vim.keymap.set("n", "<leader>na", ":NoiceAll<Cr>", { silent = true })
 				vim.keymap.set("n", "<leader>nd", ":NoiceDismiss<Cr>", { silent = true })
 				vim.keymap.set("n", "<leader>nt", ":tabs<Cr>", { silent = true })
-				vim.api.nvim_create_autocmd("RecordingEnter", {
-					callback = function()
-						local reg = vim.fn.reg_recording()
-						if reg ~= "" then
-							vim.notify("Recording @ '" .. reg .. "'", vim.log.levels.INFO, { Title = "Macro" })
-						end
-					end,
-				})
-				vim.api.nvim_create_autocmd("RecordingLeave", {
-					callback = function()
-						local reg = vim.fn.reg_recording()
-						vim.notify("Recorded @ '" .. reg .. "'", vim.log.levels.INFO, { Title = "Macro" })
-					end,
-				})
 			end,
 		},
 
@@ -965,23 +1001,6 @@ require("lazy").setup({
 					end,
 				},
 			},
-		},
-
-		{
-			"lewis6991/hover.nvim",
-			event = "VeryLazy",
-			config = function()
-				require("hover").config({
-					providers = {
-						"hover.providers.lsp",
-						"hover.providers.diagnostic",
-					},
-					mouse_providers = {},
-				})
-				vim.keymap.set("n", "gh", function()
-					require("hover").open()
-				end, { desc = "hover.nvim (open)" })
-			end,
 		},
 
 		{
@@ -1340,36 +1359,6 @@ require("lazy").setup({
 					},
 				},
 			},
-		},
-		{
-			"ivfiev/clean-marks.nvim",
-			-- dir = "~/dev/clean-marks.nvim",
-			event = "VeryLazy",
-			opts = {
-				log_level = vim.log.levels.WARN,
-				mappings = {
-					goto_mark = nil,
-					set_mark = "M",
-					float_window = "<leader>cm",
-				},
-				window = {
-					height = 0.8,
-					width = 0.6,
-				},
-			},
-			config = function(_, opts)
-				local cm = require("clean-marks")
-				cm.setup(opts)
-				vim.keymap.set("n", "'", function()
-					local peek = vim.fn.getcharstr(1)
-					if tonumber(peek) ~= nil then
-						local mark = vim.fn.getcharstr()
-						vim.cmd("normal! " .. mark .. "gt")
-					else
-						cm.goto_mark()
-					end
-				end)
-			end,
 		},
 
 		--

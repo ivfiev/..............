@@ -253,6 +253,9 @@ vim.keymap.set("n", "'", function()
 		vim.cmd("normal! " .. mark .. "gt")
 	else
 		vim.cmd("normal! '" .. mark)
+		if string.upper(mark) == mark then
+			vim.cmd([[norm! g`"]])
+		end
 	end
 end)
 
@@ -468,7 +471,7 @@ vim.keymap.set("n", "K", function()
 			hover:set(false)
 		end
 	elseif not has_float then
-		vim.lsp.buf.hover()
+		vim.lsp.buf.hover({ silent = true })
 	end
 end)
 

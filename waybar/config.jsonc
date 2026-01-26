@@ -117,6 +117,7 @@
         "tooltip-format": "{volume}%",
         "format-muted": " ",
         "on-click": "pavucontrol",
+        "scroll-step": 5,
         "format-icons": {
             //"headphone": "",
             //"hands-free": "",

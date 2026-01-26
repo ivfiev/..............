@@ -1,11 +1,6 @@
 vim.g.mapleader = ","
 vim.g.maplocalleader = " "
 vim.g.have_nerd_font = true
-vim.keymap.set("i", "qq", "<Esc>")
-vim.keymap.set("i", "`", function()
-	send_key("<Esc>", "i") -- +autopairs rule
-end)
-vim.keymap.set("i", "¬", "`")
 vim.keymap.set({ "n", "x" }, ",,", ",")
 
 vim.opt.number = true
@@ -233,6 +228,10 @@ vim.api.nvim_create_autocmd("VimEnter", {
 						end
 					end
 				end, 20)
+			end)
+		elseif arg ~= "" then
+			vim.schedule(function()
+				pcall(vim.cmd, [[norm! g`"]])
 			end)
 		end
 	end,
@@ -963,11 +962,6 @@ require("lazy").setup({
 			"windwp/nvim-autopairs",
 			event = "InsertEnter",
 			opts = {},
-			config = function(_, opts)
-				local ap = require("nvim-autopairs")
-				ap.setup(opts)
-				ap.remove_rule("`")
-			end,
 		},
 
 		{
@@ -1103,7 +1097,7 @@ require("lazy").setup({
 					capabilities = capabilities,
 					settings = {
 						Lua = {
-							-- workspace = {    -- lazydev should handle this
+							-- workspace = { -- lazydev should handle this
 							-- 	library = vim.api.nvim_get_runtime_file("", true),
 							-- },
 							telemetry = { enable = false },

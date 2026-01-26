@@ -143,6 +143,7 @@ vim.keymap.set({ "n", "x" }, "<leader><Tab>", ":tab split<CR>", { silent = true 
 vim.keymap.set("n", "U", "<C-r>") -- redo
 vim.keymap.set("n", "<C-r>", "U") -- C-restore
 vim.keymap.set("i", "<C-BS>", "<C-w>")
+vim.keymap.set("i", "<C-w>", "<C-o><C-w>")
 
 vim.keymap.set("n", "<C-a>", "<C-^>")
 vim.keymap.set("i", "<C-a>", "<C-o><C-^>")

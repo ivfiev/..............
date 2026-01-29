@@ -584,6 +584,7 @@ require("lazy").setup({
 					auto_install = true,
 					highlight = {
 						enable = true,
+						disable = { "go" },
 						additional_vim_regex_highlighting = false,
 					},
 					indent = { enable = true },
@@ -1140,6 +1141,7 @@ require("lazy").setup({
 					settings = {
 						gopls = {
 							staticcheck = true,
+							semanticTokens = true,
 							hints = {
 								assignVariableTypes = true,
 								compositeLiteralFields = true,

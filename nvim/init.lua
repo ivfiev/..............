@@ -550,6 +550,7 @@ require("lazy").setup({
 							bg = hl.LineNr.fg,
 							bold = true,
 						})
+						hl.MatchParen = { fg = "#FF4400", bg = "NONE", bold = true }
 					end,
 				})
 				vim.cmd([[colorscheme tokyonight-night]])
@@ -567,24 +568,14 @@ require("lazy").setup({
 					ensure_installed = {
 						"lua",
 						"python",
-						"javascript",
-						"html",
-						"css",
 						"bash",
 						"c",
 						"go",
-						"c_sharp",
-						"json",
-						"yaml",
-						"sql",
-						"dockerfile",
-						"hcl",
 					},
 					sync_install = false,
 					auto_install = true,
 					highlight = {
 						enable = true,
-						disable = { "go" },
 						additional_vim_regex_highlighting = false,
 					},
 					indent = { enable = true },

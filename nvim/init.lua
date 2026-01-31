@@ -540,17 +540,18 @@ require("lazy").setup({
 						hl.FlashCurrent = { bg = "#006666", fg = "#111111", bold = false }
 						hl.FlashMatch = { bg = "#006666", fg = "#111111", bold = false }
 						hl.FlashLabel = { bg = "#880088", fg = "#FAFAFA", bold = true }
-						hl.Include = { fg = c.purple }
 						hl.TabLine = { fg = hl.LineNr.fg, bg = BG }
 						hl.TabLineFill = { bg = BG }
 						hl.TabLineSel = { fg = hl.CursorLineNr.fg, bold = true, bg = BG }
 						hl.TelescopeResultsComment = { fg = hl.LineNr.fg, bg = "NONE", italic = true }
+						hl.PreProc = { fg = hl.Special.fg }
 						vim.api.nvim_set_hl(0, "TelescopeMatching", {
 							fg = hl.CursorLineNr.fg,
 							bg = hl.LineNr.fg,
 							bold = true,
 						})
 						hl.MatchParen = { fg = "#FF4400", bg = "NONE", bold = true }
+						vim.keymap.set("n", "<leader>I", "<leader>nd:Inspect<CR>", { silent = true, remap = true })
 					end,
 				})
 				vim.cmd([[colorscheme tokyonight-night]])

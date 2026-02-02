@@ -544,13 +544,24 @@ require("lazy").setup({
 						hl.TabLineFill = { bg = BG }
 						hl.TabLineSel = { fg = hl.CursorLineNr.fg, bold = true, bg = BG }
 						hl.TelescopeResultsComment = { fg = hl.LineNr.fg, bg = "NONE", italic = true }
-						hl.PreProc = { fg = hl.Special.fg }
+						hl.PreProc = { fg = c.purple }
 						vim.api.nvim_set_hl(0, "TelescopeMatching", {
 							fg = hl.CursorLineNr.fg,
 							bg = hl.LineNr.fg,
 							bold = true,
 						})
 						hl.MatchParen = { fg = "#FF4400", bg = "NONE", bold = true }
+						hl.LspReferenceText = { bg = "NONE" }
+						vim.schedule(function()
+							vim.api.nvim_set_hl(0, "@markup.raw.markdown_inline", { link = "Special" })
+							vim.api.nvim_set_hl(0, "@markup.raw.block.markdown", { link = "@variable" })
+							vim.api.nvim_set_hl(
+								0,
+								"@lsp.type.namespace.go",
+								{ fg = hl.Special.fg, italic = true, bold = true, underline = true }
+							)
+							-- vim.api.nvim_set_hl(0, "@lsp.typemod.variable.readonly.go", { link = "Constant" })
+						end)
 						vim.keymap.set("n", "<leader>I", "<leader>nd:Inspect<CR>", { silent = true, remap = true })
 					end,
 				})
@@ -559,7 +570,7 @@ require("lazy").setup({
 		},
 
 		{
-			"nvim-treesitter/nvim-treesitter",
+			"ivfiev/nvim-treesitter",
 			dependencies = { "nvim-treesitter/nvim-treesitter-textobjects", branch = "master" },
 			branch = "master", -- TODO: migrate to 'main'
 			lazy = false,
@@ -721,7 +732,7 @@ require("lazy").setup({
 							ignore_current_buffer = false,
 							mappings = {
 								i = {
-									["<C-x>"] = actions.delete_buffer,
+									["<C-x>"] = actions.delete_buffer, -- TODO this wipes marks
 								},
 							},
 						},
@@ -812,7 +823,10 @@ require("lazy").setup({
 									elseif vim.bo[buf].modified then
 										name = name .. " ✎"
 									end
-									return ctx.tabnr .. " " .. name
+									if #vim.api.nvim_list_tabpages() > 1 then
+										name = ctx.tabnr .. " " .. name
+									end
+									return name
 								end,
 							},
 						},

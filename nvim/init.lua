@@ -560,7 +560,9 @@ require("lazy").setup({
 								"@lsp.type.namespace.go",
 								{ fg = hl.Special.fg, italic = true, bold = true, underline = true }
 							)
-							-- vim.api.nvim_set_hl(0, "@lsp.typemod.variable.readonly.go", { link = "Constant" })
+							vim.api.nvim_set_hl(0, "@lsp.mod.readonly.go", { link = "@variable.builtin" })
+							vim.api.nvim_set_hl(0, "@lsp.type.number.go", { link = "@variable.builtin" })
+							vim.api.nvim_set_hl(0, "@variable.builtin", { fg = "#D050D0" })
 						end)
 						vim.keymap.set("n", "<leader>I", "<leader>nd:Inspect<CR>", { silent = true, remap = true })
 					end,

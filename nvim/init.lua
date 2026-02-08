@@ -148,6 +148,7 @@ vim.keymap.set("i", "<C-w>", "<C-o><C-w>")
 vim.keymap.set("n", "<C-a>", "<C-^>")
 vim.keymap.set("i", "<C-a>", "<C-o><C-^>")
 vim.keymap.set("t", "<C-a>", [[<C-\><C-n><C-^>]])
+vim.keymap.set("t", "<C-s>", "<Nop>")
 
 vim.keymap.set({ "x", "n" }, "<C-u>", "<C-u>zz")
 vim.keymap.set({ "x", "n" }, "<C-d>", "<C-d>zz")
@@ -545,6 +546,7 @@ require("lazy").setup({
 						hl.TabLineSel = { fg = hl.CursorLineNr.fg, bold = true, bg = BG }
 						hl.TelescopeResultsComment = { fg = hl.LineNr.fg, bg = "NONE", italic = true }
 						hl.PreProc = { fg = c.purple }
+						hl.Folded = { fg = hl.LineNr.fg, bg = "NONE" }
 						vim.api.nvim_set_hl(0, "TelescopeMatching", {
 							fg = hl.CursorLineNr.fg,
 							bg = hl.LineNr.fg,

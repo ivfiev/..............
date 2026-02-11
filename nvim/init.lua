@@ -255,7 +255,7 @@ vim.keymap.set("n", "'", function()
 	else
 		vim.cmd("normal! '" .. mark)
 		if string.upper(mark) == mark then
-			vim.cmd([[norm! g`"]])
+			pcall(vim.cmd, [[norm! g`"]])
 		end
 	end
 end)
@@ -538,9 +538,8 @@ require("lazy").setup({
 						hl.NeoTreeCursorLine = { bg = "#002244" }
 						hl.TelescopeSelection = { bg = "#002244" }
 						hl.QuickFixLine = { bg = "#002244" }
-						hl.FlashCurrent = { bg = "#006666", fg = "#111111", bold = false }
-						hl.FlashMatch = { bg = "#006666", fg = "#111111", bold = false }
-						hl.FlashLabel = { bg = "#880088", fg = "#FAFAFA", bold = true }
+						hl.FlashMatch = { bg = hl.Search.bg, fg = hl.Search.fg, bold = false }
+						hl.FlashLabel = { bg = hl.Search.bg, fg = "#00FFFF", bold = true }
 						hl.TabLine = { fg = hl.LineNr.fg, bg = BG }
 						hl.TabLineFill = { bg = BG }
 						hl.TabLineSel = { fg = hl.CursorLineNr.fg, bold = true, bg = BG }
@@ -1393,6 +1392,8 @@ require("lazy").setup({
 		{
 			"GustavEikaas/easy-dotnet.nvim",
 			commit = "431d2d41a0f1d5566222720abd5ff568527f3c8b",
+			cmd = "StartEasyDotnet",
+			keys = { "<leader>SED" },
 			dependencies = {
 				"nvim-lua/plenary.nvim",
 				"nvim-telescope/telescope.nvim",

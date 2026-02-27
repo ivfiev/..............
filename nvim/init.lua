@@ -1391,16 +1391,13 @@ require("lazy").setup({
 		},
 		{
 			"GustavEikaas/easy-dotnet.nvim",
-			commit = "431d2d41a0f1d5566222720abd5ff568527f3c8b",
 			cmd = "StartEasyDotnet",
 			keys = { "<leader>SED" },
 			dependencies = {
 				"nvim-lua/plenary.nvim",
 				"nvim-telescope/telescope.nvim",
-				"Cliffback/netcoredbg-macOS-arm64.nvim",
 			},
 			enabled = IS_WORK,
-			ft = { "cs" },
 			config = function()
 				local dotnet = require("easy-dotnet")
 				dotnet.setup({
@@ -1444,8 +1441,12 @@ require("lazy").setup({
 		},
 		{
 			"mfussenegger/nvim-dap",
+			dependencies = {
+				"GustavEikaas/easy-dotnet.nvim",
+			},
+			cmd = "StartEasyDotnet",
+			keys = { "<leader>SED" },
 			enabled = IS_WORK,
-			ft = { "cs" },
 			config = function()
 				local dap = require("dap")
 				dap.adapters.coreclr = {
@@ -1474,8 +1475,9 @@ require("lazy").setup({
 		{
 			"rcarriga/nvim-dap-ui",
 			enabled = IS_WORK,
-			ft = { "cs" },
 			dependencies = { "mfussenegger/nvim-dap", "nvim-neotest/nvim-nio" },
+			cmd = "StartEasyDotnet",
+			keys = { "<leader>SED" },
 			opts = {},
 			config = function(_, opts)
 				local dap = require("dap")
@@ -1577,8 +1579,9 @@ require("lazy").setup({
 		{
 			"Cliffback/netcoredbg-macOS-arm64.nvim",
 			enabled = IS_WORK,
-			ft = { "cs" },
 			dependencies = { "mfussenegger/nvim-dap" },
+			cmd = "StartEasyDotnet",
+			keys = { "<leader>SED" },
 			config = function()
 				require("netcoredbg-macOS-arm64").setup(require("dap"))
 			end,

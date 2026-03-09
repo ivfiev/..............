@@ -548,7 +548,7 @@ require("lazy").setup({
 						hl.Folded = { fg = hl.LineNr.fg, bg = "NONE" }
 						vim.api.nvim_set_hl(0, "TelescopeMatching", {
 							fg = hl.CursorLineNr.fg,
-							bg = hl.LineNr.fg,
+							bg = hl.Search.bg,
 							bold = true,
 						})
 						hl.MatchParen = { fg = "#FF4400", bg = "NONE", bold = true }

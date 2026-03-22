@@ -127,8 +127,6 @@ vim.keymap.set({ "n", "i" }, "<X2Mouse>", "<C-i>")
 vim.keymap.set({ "n", "x" }, "{", "<Cmd>keepjumps norm! {<CR>", { silent = true })
 vim.keymap.set({ "n", "x" }, "}", "<Cmd>keepjumps norm! }<CR>", { silent = true })
 
-vim.keymap.set({ "n", "x" }, "]t", "gt")
-vim.keymap.set({ "n", "x" }, "[t", "gT")
 vim.api.nvim_create_autocmd("TabLeave", {
 	callback = function()
 		vim.g.last_tab = vim.api.nvim_get_current_tabpage()
@@ -618,8 +616,8 @@ require("lazy").setup({
 								["is"] = "@switch.inner",
 								["al"] = "@loop.outer",
 								["il"] = "@loop.inner",
-								["ac"] = "@class.outer",
-								["ic"] = "@class.inner",
+								["at"] = "@class.outer",
+								["it"] = "@class.inner",
 								["aa"] = "@parameter.outer",
 							},
 							selection_modes = {
@@ -645,7 +643,7 @@ require("lazy").setup({
 								["]s"] = "@switch.outer",
 								["]l"] = "@loop.outer",
 								["]a"] = "@parameter.outer",
-								["]c"] = "@class.outer",
+								["]t"] = "@class.outer",
 							},
 							goto_next_end = {
 								["]F"] = "@function.outer",
@@ -653,7 +651,7 @@ require("lazy").setup({
 								["]I"] = "@conditional.outer",
 								["]S"] = "@switch.outer",
 								["]L"] = "@loop.outer",
-								["]C"] = "@class.outer",
+								["]T"] = "@class.outer",
 							},
 							goto_previous_start = {
 								["[f"] = "@function.outer",
@@ -662,7 +660,7 @@ require("lazy").setup({
 								["[s"] = "@switch.outer",
 								["[l"] = "@loop.outer",
 								["[a"] = "@parameter.outer",
-								["[c"] = "@class.outer",
+								["[t"] = "@class.outer",
 							},
 							goto_previous_end = {
 								["[F"] = "@function.outer",
@@ -670,7 +668,7 @@ require("lazy").setup({
 								["[I"] = "@conditional.outer",
 								["[S"] = "@switch.outer",
 								["[L"] = "@loop.outer",
-								["[C"] = "@class.outer",
+								["[T"] = "@class.outer",
 							},
 						},
 						swap = {

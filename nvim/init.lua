@@ -538,6 +538,7 @@ require("lazy").setup({
 						hl.QuickFixLine = { bg = "#002244" }
 						hl.FlashMatch = { bg = hl.Search.bg, fg = hl.Search.fg, bold = false }
 						hl.FlashLabel = { bg = hl.Search.bg, fg = "#00FFFF", bold = true }
+						hl.BlinkCmpScrollBarThumb = { bg = "#27a1b9" }
 						hl.TabLine = { fg = hl.LineNr.fg, bg = BG }
 						hl.TabLineFill = { bg = BG }
 						hl.TabLineSel = { fg = hl.CursorLineNr.fg, bold = true, bg = BG }

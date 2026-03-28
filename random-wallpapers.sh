@@ -9,11 +9,11 @@ while true; do
     random="$(find ~/Wallpapers -type f | grep '1ights')"
   fi
   if [[ "$current" != "$random" ]]; then
-    swww img $random --transition-type fade --resize stretch --outputs DP-1
+    awww img $random --transition-type fade --resize stretch --outputs DP-1
     current=$random
   fi
   # if [[ "$current2" != "$random2" ]]; then
-  #   swww img $random2 --transition-type fade --resize stretch --outputs DP-2
+  #   awww img $random2 --transition-type fade --resize stretch --outputs DP-2
   #   current2=$random2
   # fi
   sleep 243

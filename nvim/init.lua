@@ -147,6 +147,13 @@ vim.api.nvim_create_autocmd("RecordingLeave", {
 		vim.notify("Recorded @ '" .. reg .. "'", vim.log.levels.INFO, { Title = "Macro" })
 	end,
 })
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = "go",
+	callback = function()
+		vim.cmd("compiler go")
+		vim.cmd([[iabbrev <buffer> ife if err != nil {<CR>return err<C-o>b<Esc>]])
+	end,
+})
 
 -- shadas & sessions
 vim.api.nvim_create_user_command("SessionSave", function()
@@ -1188,39 +1195,6 @@ require("lazy").setup({
 		},
 
 		{
-			"L3MON4D3/LuaSnip",
-			--dependencies = { "rafamadriz/friendly-snippets" },
-			config = function()
-				local ls = require("luasnip")
-				local s = ls.snippet
-				local t = ls.text_node
-				local i = ls.insert_node
-				local events = require("luasnip.util.events")
-
-				local n = {
-					callbacks = {
-						[-1] = {
-							[events.leave] = function()
-								send_key("<Esc>", "i")
-							end,
-						},
-					},
-				}
-
-				ls.add_snippets("go", {
-					s("iferr", {
-						t({ "if err != nil {", "" }),
-						t("\t"),
-						t("return e"),
-						i(0),
-						t("rr"),
-						t({ "", "}" }),
-					}, n),
-				})
-			end,
-		},
-
-		{
 			"Saghen/blink.cmp",
 			event = "VimEnter",
 			version = "1.*",
@@ -1258,7 +1232,7 @@ require("lazy").setup({
 					},
 				},
 				snippets = {
-					preset = "luasnip",
+					preset = "default",
 				},
 				-- :h blink-cmp-config-fuzzy
 				fuzzy = { implementation = "rust" },

@@ -1224,6 +1224,9 @@ require("lazy").setup({
 						lazydev = { module = "lazydev.integrations.blink", score_offset = 100 },
 					},
 				},
+				snippets = {
+					preset = "default",
+				},
 				-- :h blink-cmp-config-fuzzy
 				fuzzy = { implementation = "rust" },
 				signature = { enabled = true }, -- func signatures

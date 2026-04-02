@@ -58,18 +58,6 @@ vim.keymap.set(
 )
 vim.keymap.set("n", "qd", ':cdo execute "norm! "<Left>', { silent = false }) --  <Esc>, C-v + Esc, etc
 vim.keymap.set({ "n", "x" }, "<leader>jq", ':%! jq ""<Left>', { silent = false })
-vim.keymap.set("x", "qs", function()
-	local open = vim.fn.getcharstr()
-	local close = vim.fn.getcharstr()
-	vim.cmd('norm! "zy')
-	local sel = vim.fn.getreg("z"):gsub("\n$", "")
-	if sel == nil or sel == "" then
-		return
-	end
-	local surrounded = open .. sel .. close
-	vim.fn.setreg("z", surrounded)
-	vim.cmd('norm! gv"zP`<lv`>ho')
-end, { silent = true })
 
 vim.keymap.set("n", "Q", function()
 	for _, win in ipairs(vim.api.nvim_list_wins()) do
@@ -99,7 +87,7 @@ vim.smartcase = true
 
 vim.opt.clipboard = "unnamedplus" -- +clipboard
 vim.opt.swapfile = false
-vim.opt.report = 9999
+vim.opt.report = 999999
 
 vim.g.netrw_browse_split = 0
 vim.g.netrw_liststyle = 3
@@ -111,15 +99,10 @@ vim.opt.confirm = true
 
 vim.keymap.set({ "n", "x", "o" }, "L", "$")
 vim.keymap.set({ "n", "x", "o" }, "H", "^")
-vim.keymap.set("n", "ZZ", "<Cmd>wqa<CR>", { silent = true })
 vim.keymap.set({ "x" }, ">", ">gv")
 vim.keymap.set({ "x" }, "<", "<gv")
 
 vim.keymap.set({ "n", "i", "x" }, "<C-s>", "<Cmd>w<CR><Esc>", { silent = true })
-vim.keymap.set({ "n", "x" }, "<C-p>", [["0p]])
-vim.keymap.set({ "i" }, "<C-p>", [[<Esc>"0pa]])
-vim.keymap.set({ "n", "x" }, "<C-S-p>", [["0P]])
-vim.keymap.set({ "i" }, "<C-S-p>", [[<Esc>"0Pa]])
 
 vim.keymap.set({ "n", "i" }, "<X1Mouse>", "<C-o>")
 vim.keymap.set({ "n", "i" }, "<X2Mouse>", "<C-i>")
@@ -127,17 +110,7 @@ vim.keymap.set({ "n", "i" }, "<X2Mouse>", "<C-i>")
 vim.keymap.set({ "n", "x" }, "{", "<Cmd>keepjumps norm! {<CR>", { silent = true })
 vim.keymap.set({ "n", "x" }, "}", "<Cmd>keepjumps norm! }<CR>", { silent = true })
 
-vim.api.nvim_create_autocmd("TabLeave", {
-	callback = function()
-		vim.g.last_tab = vim.api.nvim_get_current_tabpage()
-	end,
-})
-vim.keymap.set({ "i", "n", "x", "t" }, "<S-Tab>", function()
-	if vim.g.last_tab and vim.api.nvim_tabpage_is_valid(vim.g.last_tab) then
-		vim.api.nvim_set_current_tabpage(vim.g.last_tab)
-	end
-end)
-vim.keymap.set({ "n", "x" }, "<leader><Tab>", ":tab split<CR>", { silent = true })
+vim.keymap.set("n", "<leader><Tab>", ":tab split<CR>", { silent = true })
 vim.keymap.set("n", "U", "<C-r>") -- redo
 vim.keymap.set("n", "<C-r>", "U") -- C-restore
 vim.keymap.set("i", "<C-BS>", "<C-w>")

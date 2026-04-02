@@ -21,17 +21,6 @@ vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
 vim.opt.expandtab = true
 vim.opt.smartindent = true
-vim.api.nvim_create_autocmd("FileType", {
-	pattern = "cs",
-	callback = function()
-		vim.opt_local.tabstop = 4
-		vim.opt_local.shiftwidth = 4
-		vim.opt_local.expandtab = true
-		vim.cmd("compiler dotnet")
-		vim.g.dotnet_errors_only = true
-		vim.g.dotnet_show_project_file = false
-	end,
-})
 
 vim.keymap.set({ "n", "x" }, "q", "<Nop>")
 vim.keymap.set("n", "<leader>q", "q") -- @ in v already works
@@ -447,10 +436,10 @@ vim.keymap.set("n", "K", function()
 	end
 end)
 
--- setup lazy
-IS_WORK = vim.loop.os_uname().sysname == "Darwin"
-print("IS_WORK: " .. tostring(IS_WORK))
+-- IS_WORK = vim.loop.os_uname().sysname == "Darwin"
+-- print("IS_WORK: " .. tostring(IS_WORK))
 
+-- setup lazy
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
 	local lazyrepo = "https://github.com/folke/lazy.nvim.git"
@@ -845,7 +834,6 @@ require("lazy").setup({
 				end
 				require("noice").setup({
 					routes = {
-						-- skip("msg_show", "lua_error", "lsp_status.lua:"),
 						skip("msg_show", "", "B written"),
 						skip("msg_show", "", '^".+L, .+B$'),
 						skip("notify", "error", "telescope"),
@@ -1090,9 +1078,6 @@ require("lazy").setup({
 					capabilities = capabilities,
 					settings = {
 						Lua = {
-							-- workspace = { -- lazydev should handle this
-							-- 	library = vim.api.nvim_get_runtime_file("", true),
-							-- },
 							telemetry = { enable = false },
 						},
 					},
@@ -1150,51 +1135,6 @@ require("lazy").setup({
 						client.server_capabilities.documentRangeFormattingProvider = false
 					end,
 				})
-
-				if IS_WORK then
-					vim.lsp.config("roslyn", {
-						capabilities = capabilities,
-						cmd = {
-							"dotnet",
-							os.getenv("HOME")
-								.. "/dev/roslyn/artifacts/bin/Microsoft.CodeAnalysis.LanguageServer/Release/net9.0/Microsoft.CodeAnalysis.LanguageServer.dll",
-							"--logLevel=Error",
-							"--extensionLogDirectory=/tmp/roslyn",
-							"--stdio",
-						},
-						settings = {
-							["csharp|background_analysis"] = {
-								dotnet_analyzer_diagnostics_scope = "openFiles",
-								dotnet_compiler_diagnostics_scope = "openFiles",
-							},
-							["csharp|symbol_search"] = {
-								dotnet_search_reference_assemblies = true,
-							},
-							["csharp|completion"] = {
-								dotnet_show_name_completion_suggestions = true,
-								dotnet_show_completion_items_from_unimported_namespaces = true,
-								dotnet_provide_regex_completions = true,
-							},
-							["csharp|code_lens"] = {
-								dotnet_enable_references_code_lens = false,
-							},
-							["csharp|inlay_hints"] = {
-								csharp_enable_inlay_hints_for_implicit_object_creation = true,
-								csharp_enable_inlay_hints_for_implicit_variable_types = true,
-								csharp_enable_inlay_hints_for_lambda_parameter_types = true,
-								csharp_enable_inlay_hints_for_types = true,
-								dotnet_enable_inlay_hints_for_indexer_parameters = true,
-								dotnet_enable_inlay_hints_for_literal_parameters = true,
-								dotnet_enable_inlay_hints_for_object_creation_parameters = true,
-								dotnet_enable_inlay_hints_for_other_parameters = true,
-								dotnet_enable_inlay_hints_for_parameters = true,
-								dotnet_suppress_inlay_hints_for_parameters_that_differ_only_by_suffix = true,
-								dotnet_suppress_inlay_hints_for_parameters_that_match_argument_name = true,
-								dotnet_suppress_inlay_hints_for_parameters_that_match_method_intent = true,
-							},
-						},
-					})
-				end
 
 				-- :Mason
 				-- require("mason-tool-installer").setup({ ensure_installed = { ... }})
@@ -1255,18 +1195,8 @@ require("lazy").setup({
 				local s = ls.snippet
 				local t = ls.text_node
 				local i = ls.insert_node
-				local f = ls.function_node
 				local events = require("luasnip.util.events")
 
-				local function namespace_from_path()
-					local filepath = vim.fn.expand("%:p:h")
-					local root = vim.fn.getcwd()
-					local relpath = filepath:gsub("^" .. vim.pesc(root) .. "/", "")
-					return relpath:gsub("/", ".")
-				end
-				local function filename()
-					return vim.fn.expand("%:t:r")
-				end
 				local n = {
 					callbacks = {
 						[-1] = {
@@ -1276,24 +1206,6 @@ require("lazy").setup({
 						},
 					},
 				}
-
-				ls.add_snippets("cs", {
-					s("initfile", {
-						t("namespace "),
-						f(namespace_from_path, {}),
-						t({ ";", "", "" }),
-						t("public interface I"),
-						f(filename, {}),
-						t({ "", "{", "\t" }),
-						i(0),
-						t({ "", "}", "", "" }),
-						t("public class "),
-						f(filename, {}),
-						t({ " : I" }),
-						f(filename, {}),
-						t({ "", "{", "\t", "}" }),
-					}, n),
-				})
 
 				ls.add_snippets("go", {
 					s("iferr", {
@@ -1308,7 +1220,7 @@ require("lazy").setup({
 			end,
 		},
 
-		{ -- Autocompletion
+		{
 			"Saghen/blink.cmp",
 			event = "VimEnter",
 			version = "1.*",
@@ -1350,8 +1262,7 @@ require("lazy").setup({
 				},
 				-- :h blink-cmp-config-fuzzy
 				fuzzy = { implementation = "rust" },
-				-- func signatures
-				signature = { enabled = true },
+				signature = { enabled = true }, -- func signatures
 				cmdline = {
 					keymap = { preset = "inherit" },
 					completion = {
@@ -1360,213 +1271,6 @@ require("lazy").setup({
 					},
 				},
 			},
-		},
-
-		--
-		--
-		--
-		{
-			"seblyng/roslyn.nvim",
-			opts = {},
-			enabled = IS_WORK,
-			ft = { "cs" },
-		},
-		{
-			"GustavEikaas/easy-dotnet.nvim",
-			cmd = "StartEasyDotnet",
-			keys = { "<leader>SED" },
-			dependencies = {
-				"nvim-lua/plenary.nvim",
-				"nvim-telescope/telescope.nvim",
-			},
-			enabled = IS_WORK,
-			config = function()
-				local dotnet = require("easy-dotnet")
-				dotnet.setup({
-					secrets = false,
-					lsp = {
-						enabled = false,
-						roslynator_enabled = false,
-					},
-					debugger = {
-						bin_path = "/Users/filips.ivanovs/.local/share/nvim/lazy/netcoredbg-macOS-arm64.nvim/netcoredbg/netcoredbg",
-						mappings = {
-							open_variable_viewer = { lhs = "V", desc = "open variable viewer" },
-						},
-					},
-					test_runner = {
-						mappings = {
-							run_test_from_buffer = { lhs = "<leader>r", desc = "run test from buffer" },
-							debug_test = { lhs = "<leader>d", desc = "debug test" },
-							peek_stack_trace_from_buffer = { lhs = "<leader>p", desc = "peek stack trace from buffer" },
-							filter_failed_tests = { lhs = "<leader>fe", desc = "filter failed tests" },
-							go_to_file = { lhs = "g", desc = "go to file" },
-							run_all = { lhs = "<leader>R", desc = "run all tests" },
-							run = { lhs = "<leader>r", desc = "run test" },
-							peek_stacktrace = { lhs = "<leader>p", desc = "peek stacktrace of failed test" },
-							expand = { lhs = "o", desc = "expand" },
-							expand_node = { lhs = "E", desc = "expand node" },
-							expand_all = { lhs = "-", desc = "expand all" },
-							collapse_all = { lhs = "W", desc = "collapse all" },
-							close = { lhs = "q", desc = "close testrunner" },
-							refresh_testrunner = { lhs = "<C-r>", desc = "refresh testrunner" },
-						},
-					},
-					auto_bootstrap_namespace = {
-						type = "file_scoped",
-					},
-				})
-				vim.keymap.set("n", "<leader>DR", ":Dotnet testrunner<CR>", { silent = true })
-				vim.keymap.set("n", "<leader>DB", ":Dotnet build<CR>", { silent = true })
-				vim.keymap.set("n", "<leader>DD", ":Dotnet debug<CR>", { silent = true })
-			end,
-		},
-		{
-			"mfussenegger/nvim-dap",
-			dependencies = {
-				"GustavEikaas/easy-dotnet.nvim",
-			},
-			cmd = "StartEasyDotnet",
-			keys = { "<leader>SED" },
-			enabled = IS_WORK,
-			config = function()
-				local dap = require("dap")
-				dap.adapters.coreclr = {
-					type = "executable",
-					command = "/Users/filips.ivanovs/.local/share/nvim/mason/bin/netcoredbg",
-					args = { "--interpreter=vscode", "--engineLogging=/tmp/netcoredbg-engine.log" },
-				}
-				dap.configurations.cs = {
-					{
-						type = "coreclr",
-						name = "launch - coreclr",
-						request = "launch",
-						program = function()
-							return vim.fn.input("Path to dll", vim.fn.getcwd() .. "/bin/Debug/net8.0/", "file")
-						end,
-						cwd = vim.fn.getcwd(),
-						stopAtEntry = true,
-						justMyCode = true,
-						exceptionBreakpointFilters = {
-							{ filter = "all", label = "Break on all exceptions", enabled = true },
-						},
-					},
-				}
-			end,
-		},
-		{
-			"rcarriga/nvim-dap-ui",
-			enabled = IS_WORK,
-			dependencies = { "mfussenegger/nvim-dap", "nvim-neotest/nvim-nio" },
-			cmd = "StartEasyDotnet",
-			keys = { "<leader>SED" },
-			opts = {},
-			config = function(_, opts)
-				local dap = require("dap")
-				local dapui = require("dapui")
-				vim.fn.sign_define("DapBreakpoint", { text = "●", texthl = "DapBreakpoint" })
-				vim.fn.sign_define("DapBreakpointCondition", { text = "◆", texthl = "DapBreakpointCondition" })
-				vim.fn.sign_define("DapBreakpointRejected", { text = "✖", texthl = "DapBreakpointRejected" })
-				vim.fn.sign_define("DapStopped", { text = "➜", texthl = "DapStopped", linehl = "DapStoppedLine" })
-
-				vim.api.nvim_set_hl(0, "DapBreakpoint", { fg = "#e06c75" })
-				vim.api.nvim_set_hl(0, "DapBreakpointCondition", { fg = "#e5c07b" })
-				vim.api.nvim_set_hl(0, "DapBreakpointRejected", { fg = "#be5046" })
-				vim.api.nvim_set_hl(0, "DapStopped", { fg = "#98c379" })
-				vim.api.nvim_set_hl(0, "DapStoppedLine", { bg = "#002244" })
-
-				dapui.setup({
-					icons = {
-						expanded = "▼",
-						collapsed = "▶",
-						current_frame = "▶",
-					},
-					controls = {
-						icons = {
-							pause = "⏸",
-							play = "▶",
-							step_into = "⤵",
-							step_over = "⤼",
-							step_out = "⤴",
-							step_back = "⏮",
-							run_last = "↺",
-							terminate = "⏹",
-						},
-					},
-				})
-
-				vim.keymap.set("n", "<F2>", dap.toggle_breakpoint)
-
-				local exns = Toggle:new(false, function()
-					require("dap").set_exception_breakpoints({})
-					vim.notify("Exceptions off", vim.log.levels.INFO)
-				end, function()
-					require("dap").set_exception_breakpoints({ "all" })
-					vim.notify("Exceptions on", vim.log.levels.INFO)
-				end)
-
-				local widgets = require("dap.ui.widgets")
-				local scopes = Toggle:new(false, function()
-					if vim.api.nvim_win_get_config(0).relative ~= "" then
-						vim.cmd(":q")
-					end
-				end, function()
-					widgets.centered_float(widgets.scopes) -- just current frame scopes
-				end)
-
-				vim.api.nvim_create_user_command("DebugKeymapsOn", function()
-					vim.keymap.set("n", "<C-n>", dap.continue)
-					vim.keymap.set("n", "b", dap.toggle_breakpoint)
-					vim.keymap.set("n", "n", dap.step_over)
-					vim.keymap.set("n", "N", dap.step_into)
-					vim.keymap.set("n", "<BS>", dap.step_out)
-					vim.keymap.set("n", "X", function()
-						dap.terminate()
-						dapui.close()
-					end)
-					vim.keymap.set("n", "e", function()
-						exns:toggle()
-					end)
-					vim.keymap.set("n", "s", function()
-						scopes:toggle()
-					end)
-				end, {})
-				vim.api.nvim_create_user_command("DebugKeymapsOff", function()
-					pcall(vim.keymap.del, "n", "<C-n>")
-					pcall(vim.keymap.del, "n", "n")
-					pcall(vim.keymap.del, "n", "N")
-					pcall(vim.keymap.del, "n", "<BS>")
-					pcall(vim.keymap.del, "n", "X")
-					pcall(vim.keymap.del, "n", "b")
-					pcall(vim.keymap.del, "n", "e")
-					pcall(vim.keymap.del, "n", "s")
-				end, {})
-
-				dap.listeners.after.event_initialized["on_start"] = function()
-					vim.cmd("DebugKeymapsOn")
-					print("Debugger started!")
-				end
-
-				dap.listeners.before.event_terminated["on_end"] = function()
-					vim.cmd("DebugKeymapsOff")
-					print("Debugger terminated.")
-				end
-
-				dap.listeners.before.event_exited["on_exit"] = function()
-					vim.cmd("DebugKeymapsOff")
-					print("Target process exited.")
-				end
-			end,
-		},
-		{
-			"Cliffback/netcoredbg-macOS-arm64.nvim",
-			enabled = IS_WORK,
-			dependencies = { "mfussenegger/nvim-dap" },
-			cmd = "StartEasyDotnet",
-			keys = { "<leader>SED" },
-			config = function()
-				require("netcoredbg-macOS-arm64").setup(require("dap"))
-			end,
 		},
 	},
 })

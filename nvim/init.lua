@@ -507,7 +507,6 @@ require("lazy").setup({
 						hl.TelescopeResultsComment = { fg = hl.LineNr.fg, bg = "NONE", italic = true }
 						hl.PreProc = { fg = c.purple }
 						hl.Folded = { fg = hl.LineNr.fg, bg = "NONE" }
-						hl.SnippetTabstop = { bg = "NONE" }
 						vim.api.nvim_set_hl(0, "TelescopeMatching", {
 							fg = hl.CursorLineNr.fg,
 							bg = hl.Search.bg,
@@ -1189,6 +1188,39 @@ require("lazy").setup({
 		},
 
 		{
+			"L3MON4D3/LuaSnip",
+			--dependencies = { "rafamadriz/friendly-snippets" },
+			config = function()
+				local ls = require("luasnip")
+				local s = ls.snippet
+				local t = ls.text_node
+				local i = ls.insert_node
+				local events = require("luasnip.util.events")
+
+				local n = {
+					callbacks = {
+						[-1] = {
+							[events.leave] = function()
+								send_key("<Esc>", "i")
+							end,
+						},
+					},
+				}
+
+				ls.add_snippets("go", {
+					s("iferr", {
+						t({ "if err != nil {", "" }),
+						t("\t"),
+						t("return e"),
+						i(0),
+						t("rr"),
+						t({ "", "}" }),
+					}, n),
+				})
+			end,
+		},
+
+		{
 			"Saghen/blink.cmp",
 			event = "VimEnter",
 			version = "1.*",
@@ -1226,7 +1258,7 @@ require("lazy").setup({
 					},
 				},
 				snippets = {
-					preset = "default",
+					preset = "luasnip",
 				},
 				-- :h blink-cmp-config-fuzzy
 				fuzzy = { implementation = "rust" },

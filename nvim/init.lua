@@ -507,6 +507,7 @@ require("lazy").setup({
 						hl.TelescopeResultsComment = { fg = hl.LineNr.fg, bg = "NONE", italic = true }
 						hl.PreProc = { fg = c.purple }
 						hl.Folded = { fg = hl.LineNr.fg, bg = "NONE" }
+						hl.SnippetTabstop = { bg = "NONE" }
 						vim.api.nvim_set_hl(0, "TelescopeMatching", {
 							fg = hl.CursorLineNr.fg,
 							bg = hl.Search.bg,

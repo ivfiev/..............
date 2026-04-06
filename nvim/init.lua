@@ -9,7 +9,8 @@ vim.opt.cursorline = true
 vim.opt.scrolloff = 5
 vim.opt.sidescrolloff = 5
 vim.opt.cmdheight = 0
-vim.opt.foldmethod = "indent"
+vim.opt.foldmethod = "expr"
+vim.opt.foldexpr = "nvim_treesitter#foldexpr()"
 vim.opt.foldlevel = 99
 vim.opt.winborder = "single"
 vim.opt.shortmess:append("I")
@@ -20,7 +21,8 @@ vim.opt.sessionoptions = "buffers,folds,tabpages" -- options(!), curdir, tabpage
 vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
 vim.opt.expandtab = true
-vim.opt.smartindent = true
+vim.opt.autoindent = false
+vim.opt.smartindent = false
 
 vim.keymap.set({ "n", "x" }, "q", "<Nop>")
 vim.keymap.set("n", "<leader>q", "q") -- @ in v already works
@@ -561,7 +563,7 @@ require("lazy").setup({
 						enable = true,
 						additional_vim_regex_highlighting = false,
 					},
-					indent = { enable = false },
+					indent = { enable = true },
 					incremental_selection = {
 						enable = true,
 						keymaps = {
@@ -1232,7 +1234,7 @@ require("lazy").setup({
 					},
 				},
 				snippets = {
-					preset = "default",
+					preset = "default", -- "luasnip"
 				},
 				-- :h blink-cmp-config-fuzzy
 				fuzzy = { implementation = "rust" },

@@ -9,8 +9,7 @@ vim.opt.cursorline = true
 vim.opt.scrolloff = 5
 vim.opt.sidescrolloff = 5
 vim.opt.cmdheight = 0
-vim.opt.foldmethod = "expr"
-vim.opt.foldexpr = "nvim_treesitter#foldexpr()"
+vim.opt.foldmethod = "indent"
 vim.opt.foldlevel = 99
 vim.opt.winborder = "single"
 vim.opt.shortmess:append("I")
@@ -93,7 +92,11 @@ vim.keymap.set({ "n", "x", "o" }, "H", "^")
 vim.keymap.set({ "x" }, ">", ">gv")
 vim.keymap.set({ "x" }, "<", "<gv")
 
-vim.keymap.set({ "n", "i", "x" }, "<C-s>", "<Cmd>w<CR><Esc>", { silent = true })
+vim.keymap.set({ "n", "i", "x" }, "<C-s>", function()
+	vim.cmd("silent w")
+	vim.cmd("stopinsert")
+	-- vim.cmd("redraw")
+end, { silent = true })
 
 vim.keymap.set({ "n", "i" }, "<X1Mouse>", "<C-o>")
 vim.keymap.set({ "n", "i" }, "<X2Mouse>", "<C-i>")
@@ -102,7 +105,8 @@ vim.keymap.set({ "n", "x" }, "{", "<Cmd>keepjumps norm! {<CR>", { silent = true 
 vim.keymap.set({ "n", "x" }, "}", "<Cmd>keepjumps norm! }<CR>", { silent = true })
 
 vim.keymap.set("n", "<leader><Tab>", ":tab split<CR>", { silent = true })
-vim.keymap.set("n", "U", "<C-r>") -- redo
+vim.keymap.set("n", "u", ":silent undo<CR>", { silent = true })
+vim.keymap.set("n", "U", ":silent redo<CR>", { silent = true })
 vim.keymap.set("n", "<C-r>", "U") -- C-restore
 vim.keymap.set("i", "<C-BS>", "<C-w>")
 vim.keymap.set("i", "<C-w>", "<C-o><C-w>")
@@ -382,7 +386,7 @@ vim.keymap.set("n", "<leader>gb", function()
 	vim.b.blame_on = true
 end)
 
-vim.lsp.set_log_level("ERROR")
+vim.lsp.log.set_level("ERROR")
 
 -- general
 function send_key(key, mode)
@@ -447,6 +451,53 @@ end)
 
 -- IS_WORK = vim.loop.os_uname().sysname == "Darwin"
 -- print("IS_WORK: " .. tostring(IS_WORK))
+
+require("vim._core.ui2").enable({
+	enable = true,
+	msg = {
+		targets = {
+			[""] = "msg",
+			empty = "cmd",
+			bufwrite = "msg",
+			confirm = "cmd",
+			emsg = "pager",
+			echo = "msg",
+			echomsg = "msg",
+			echoerr = "pager",
+			completion = "cmd",
+			list_cmd = "pager",
+			lua_error = "pager",
+			lua_print = "msg",
+			progress = "pager",
+			rpc_error = "pager",
+			quickfix = "msg",
+			search_cmd = "cmd",
+			search_count = "cmd",
+			shell_cmd = "pager",
+			shell_err = "pager",
+			shell_out = "pager",
+			shell_ret = "msg",
+			undo = "msg",
+			verbose = "pager",
+			wildlist = "cmd",
+			wmsg = "msg",
+			typed_cmd = "cmd",
+		},
+		cmd = {
+			height = 0.5,
+		},
+		dialog = {
+			height = 0.5,
+		},
+		msg = {
+			height = 0.8,
+			timeout = 5000,
+		},
+		pager = {
+			height = 0.8,
+		},
+	},
+})
 
 -- setup lazy
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -535,7 +586,7 @@ require("lazy").setup({
 							vim.api.nvim_set_hl(0, "@lsp.type.number.go", { link = "@variable.builtin" })
 							vim.api.nvim_set_hl(0, "@variable.builtin", { fg = "#D070D0" })
 						end)
-						vim.keymap.set("n", "<leader>I", "<leader>nd:Inspect<CR>", { silent = true, remap = true })
+						vim.keymap.set("n", "<leader>I", ":Inspect<CR>", { silent = true })
 					end,
 				})
 				vim.cmd([[colorscheme tokyonight-night]])
@@ -543,125 +594,32 @@ require("lazy").setup({
 		},
 
 		{
-			"ivfiev/nvim-treesitter",
-			dependencies = { "ivfiev/nvim-treesitter-textobjects", branch = "master" },
-			branch = "master", -- TODO: migrate to 'main'
+			"nvim-treesitter/nvim-treesitter",
 			lazy = false,
 			build = ":TSUpdate",
 			config = function()
-				require("nvim-treesitter.configs").setup({
-					ensure_installed = {
-						"lua",
-						"python",
-						"bash",
-						"c",
-						"go",
-					},
-					sync_install = false,
-					auto_install = true,
-					highlight = {
-						enable = true,
-						additional_vim_regex_highlighting = false,
-					},
-					indent = { enable = true },
-					incremental_selection = {
-						enable = true,
-						keymaps = {
-							init_selection = false,
-							node_incremental = "+",
-							node_decremental = "-",
-							scope_incremental = false,
-						},
-					},
-					textobjects = {
-						select = {
-							enable = true,
-							lookahead = true,
-							keymaps = {
-								["af"] = "@function.outer",
-								["if"] = "@function.inner",
-								["ab"] = "@block.outer",
-								["ib"] = "@block.inner",
-								["ai"] = "@conditional.outer",
-								["ii"] = "@conditional.inner",
-								["as"] = "@switch.outer",
-								["is"] = "@switch.inner",
-								["al"] = "@loop.outer",
-								["il"] = "@loop.inner",
-								["at"] = "@class.outer",
-								["it"] = "@class.inner",
-								["aa"] = "@parameter.outer",
-							},
-							selection_modes = {
-								["@parameter.outer"] = "v",
-								["@function.outer"] = "V",
-								["@conditional.outer"] = "V",
-								["@switch.outer"] = "V",
-								["@switch.inner"] = "V",
-								["@loop.outer"] = "V",
-								["@block.outer"] = "V",
-								["@class.outer"] = "V",
-								["@class.inner"] = "V",
-							},
-							include_surrounding_whitespace = false,
-						},
-						move = {
-							enable = true,
-							set_jumps = false,
-							goto_next_start = {
-								["]f"] = "@function.outer",
-								["]b"] = "@block.outer",
-								["]i"] = "@conditional.outer",
-								["]s"] = "@switch.outer",
-								["]l"] = "@loop.outer",
-								["]a"] = "@parameter.outer",
-								["]t"] = "@class.outer",
-							},
-							goto_next_end = {
-								["]F"] = "@function.outer",
-								["]B"] = "@block.outer",
-								["]I"] = "@conditional.outer",
-								["]S"] = "@switch.outer",
-								["]L"] = "@loop.outer",
-								["]T"] = "@class.outer",
-							},
-							goto_previous_start = {
-								["[f"] = "@function.outer",
-								["[b"] = "@block.outer",
-								["[i"] = "@conditional.outer",
-								["[s"] = "@switch.outer",
-								["[l"] = "@loop.outer",
-								["[a"] = "@parameter.outer",
-								["[t"] = "@class.outer",
-							},
-							goto_previous_end = {
-								["[F"] = "@function.outer",
-								["[B"] = "@block.outer",
-								["[I"] = "@conditional.outer",
-								["[S"] = "@switch.outer",
-								["[L"] = "@loop.outer",
-								["[T"] = "@class.outer",
-							},
-						},
-						swap = {
-							enable = true,
-							swap_next = {
-								[")a"] = "@parameter.inner",
-							},
-							swap_previous = {
-								["(a"] = "@parameter.inner",
-							},
-						},
-					},
+				local treesitter = require("nvim-treesitter")
+				local available = treesitter.get_available()
+				local installed = treesitter.get_installed()
+				vim.api.nvim_create_autocmd("FileType", {
+					pattern = { "*" },
+					callback = function(ev)
+						if vim.bo[ev.buf].buftype ~= "" then
+							return
+						end
+						local lang = vim.treesitter.language.get_lang(ev.match)
+						if vim.list_contains(available, lang) then
+							if not vim.list_contains(installed, lang) then
+								treesitter.install(lang):wait()
+								table.insert(installed, lang)
+							end
+							vim.treesitter.start(ev.buf)
+							vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+							vim.wo[0][0].foldexpr = "v:lua.vim.treesitter.foldexpr()"
+							vim.wo[0][0].foldmethod = "expr"
+						end
+					end,
 				})
-				vim.filetype.add({ extension = { yml = "yaml" } })
-				local ts_repeat_move = require("nvim-treesitter.textobjects.repeatable_move")
-				vim.keymap.set({ "n", "x", "o" }, ";", ts_repeat_move.repeat_last_move)
-				vim.keymap.set({ "n", "x", "o" }, ",,", ts_repeat_move.repeat_last_move_opposite)
-				vim.keymap.set({ "n", "x", "o" }, "f", ts_repeat_move.builtin_f_expr, { expr = true })
-				vim.keymap.set({ "n", "x", "o" }, "F", ts_repeat_move.builtin_F_expr, { expr = true })
-				vim.keymap.set({ "n", "x", "o" }, "t", ts_repeat_move.builtin_t_expr, { expr = true })
-				vim.keymap.set({ "n", "x", "o" }, "T", ts_repeat_move.builtin_T_expr, { expr = true })
 			end,
 		},
 
@@ -828,57 +786,6 @@ require("lazy").setup({
 						lualine_z = {},
 					},
 				})
-			end,
-		},
-
-		{
-			"folke/noice.nvim",
-			dependencies = { "MunifTanjim/nui.nvim" },
-			config = function()
-				local skip = function(event, kind, find)
-					return { filter = { event = event, kind = kind, find = find }, opts = { skip = true } }
-				end
-				local popup = function(event, kind, find)
-					return { filter = { event = event, kind = kind, find = find }, view = "popup" }
-				end
-				require("noice").setup({
-					routes = {
-						skip("msg_show", "", "B written"),
-						skip("msg_show", "", '^".+L, .+B$'),
-						skip("notify", "error", "telescope"),
-						popup("msg_show", { "shell_out", "shell_err" }),
-						popup("msg_show", nil, "^mark line"),
-						popup("msg_show", nil, "^[ ]+#[ ]+cmd history"),
-						popup("msg_show", nil, "^Type Name Content"),
-						popup("msg_show", nil, "^Tab page"),
-						popup("msg_show", "list_cmd", ""),
-					},
-					presets = {
-						lsp_doc_border = true,
-					},
-					cmdline = { enabled = true },
-					lsp = {
-						progress = { enabled = false },
-						hover = { enabled = false },
-						signature = { enabled = false },
-					},
-					messages = {
-						enabled = true,
-					},
-					commands = {
-						all = {
-							view = "popup",
-						},
-					},
-					views = {
-						mini = {
-							timeout = 10000,
-						},
-					},
-				})
-				vim.keymap.set("n", "<leader>na", ":NoiceAll<Cr>", { silent = true })
-				vim.keymap.set("n", "<leader>nd", ":NoiceDismiss<Cr>", { silent = true })
-				vim.keymap.set("n", "<leader>nt", ":tabs<Cr>", { silent = true })
 			end,
 		},
 

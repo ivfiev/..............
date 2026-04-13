@@ -574,22 +574,28 @@ require("lazy").setup({
 				local treesitter = require("nvim-treesitter")
 				local available = treesitter.get_available()
 				local installed = treesitter.get_installed()
+				local function start_treesitter(buf, lang)
+					vim.treesitter.start(buf, lang)
+					vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+					vim.wo[0][0].foldexpr = "v:lua.vim.treesitter.foldexpr()"
+					vim.wo[0][0].foldmethod = "expr"
+				end
 				vim.api.nvim_create_autocmd("FileType", {
-					pattern = { "*" },
 					callback = function(ev)
 						if vim.bo[ev.buf].buftype ~= "" then
 							return
 						end
 						local lang = vim.treesitter.language.get_lang(ev.match)
-						if vim.list_contains(available, lang) then
-							if not vim.list_contains(installed, lang) then
-								treesitter.install(lang):wait()
-								table.insert(installed, lang)
-							end
-							vim.treesitter.start(ev.buf)
-							vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
-							vim.wo[0][0].foldexpr = "v:lua.vim.treesitter.foldexpr()"
-							vim.wo[0][0].foldmethod = "expr"
+						if not lang or not vim.list_contains(available, lang) then
+							return
+						end
+						if not vim.list_contains(installed, lang) then
+							table.insert(installed, lang)
+							treesitter.install(lang):await(function()
+								start_treesitter(ev.buf, lang)
+							end)
+						else
+							start_treesitter(ev.buf, lang)
 						end
 					end,
 				})

@@ -599,6 +599,8 @@ require("lazy").setup({
 						end
 					end,
 				})
+				vim.keymap.set("x", "+", "an", { remap = true })
+				vim.keymap.set("x", "_", "in", { remap = true })
 			end,
 		},
 

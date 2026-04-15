@@ -100,3 +100,5 @@ fff() {
 }
 zle -N fff
 bindkey '^Ff' fff
+
+export ROCM_PATH=/opt/rocm

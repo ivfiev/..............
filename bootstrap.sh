@@ -66,6 +66,7 @@ go telemetry off
 yay -Syu fatrace catproccpuinfogrepmhz
 
 sudo sed -i 's/^GRUB_TIMEOUT *= *[0-9]*$/GRUB_TIMEOUT=0/' /etc/default/grub
+sudo sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*$/GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet amdgpu.ppfeaturemask=0xffffffff"/' /etc/default/grub
 sudo grub-mkconfig -o /boot/grub/grub.cfg
 
 sudo ufw enable

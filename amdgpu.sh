@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 if [ "$1" = "--game" ]; then
   echo "applying game profile"
   sudo tee /sys/class/drm/card1/device/pp_od_clk_voltage <<< "vo -70"
@@ -21,3 +23,6 @@ else
   sudo tee /sys/class/drm/card1/device/power_dpm_force_performance_level <<< low
 fi
 
+# sudo sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*$/GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet amdgpu.ppfeaturemask=0xffffffff"/' /etc/default/grub
+# export ROCM_PATH=/opt/rocm
+# sudo usermod -aG render,video $USER

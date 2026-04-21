@@ -115,6 +115,9 @@ vim.keymap.set("n", "<C-a>", "<C-^>")
 vim.keymap.set("i", "<C-a>", "<C-o><C-^>")
 vim.keymap.set("t", "<C-a>", [[<C-\><C-n><C-^>]])
 vim.keymap.set("t", "<C-s>", "<Nop>")
+vim.keymap.set({ "n", "x" }, "<C-p>", [["*gp]])
+vim.keymap.set({ "n", "x" }, "<C-S-p>", [["*gP]])
+vim.keymap.set("i", "<C-p>", [[<c-o>"*gp]])
 
 vim.keymap.set({ "x", "n" }, "<C-u>", "<C-u>zz")
 vim.keymap.set({ "x", "n" }, "<C-d>", "<C-d>zz")
@@ -283,10 +286,10 @@ end, { silent = true })
 vim.keymap.set("t", "<S-Esc>", [[<C-\><C-n>]], { silent = true })
 vim.keymap.set("t", "<C-o>", [[<C-\><C-n>:b#<Cr>]], { silent = true })
 vim.api.nvim_create_autocmd({ "TermOpen", "BufEnter", "TabEnter", "WinResized" }, {
-	pattern = "*",
+	pattern = "term://*",
 	callback = function()
 		vim.schedule(function()
-			if vim.opt.buftype:get() == "terminal" then
+			if vim.bo.buftype == "terminal" then
 				vim.g.last_term = vim.api.nvim_get_current_buf()
 				vim.cmd("startinsert")
 			end

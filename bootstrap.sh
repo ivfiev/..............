@@ -85,3 +85,4 @@ reboot
 # ipv6
 # /etc/default/grub cryptdevice=...:allow-discards
 # rocm setup & undervolt in amdgpu.sh
+# .zsh_history

@@ -62,7 +62,7 @@ alias vim=nvim
 export FZF_DEFAULT_OPTS="--height=96% --style=full --color='border:#27a1b9,scrollbar:#27a1b9,pointer:#27a1b9,bg+:#002244,marker:#00cccc,prompt:#00cccc' --layout=reverse"
 
 ffh() {
-  local cmd=$(history 0 | tac | fzf | sed 's/^[ 0-9]\+//') || return 0
+  local cmd=$(history 0 | tac | fzf --no-sort | sed 's/^[ 0-9]\+//') || return 0
   if [[ -n "$cmd" ]]; then 
     BUFFER+="$cmd"
     CURSOR=$#BUFFER

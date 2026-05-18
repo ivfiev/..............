@@ -48,7 +48,7 @@ bindkey -M menuselect '^L' vi-forward-char
 alias ls='ls --color=auto -p'
 alias grep='grep --color=auto'
 alias cp='cp -v'
-alias rm='rm -v'
+alias rm='rm -vI' # -r
 alias mv='mv -v'
 alias oh-come-on="/home/$USER/dev/oh-come-on/bin/oh-come-on"
 alias pgitp="/home/$USER/dev/pgitp/pgitp.sh"

@@ -11,7 +11,8 @@ sudo systemctl enable fstrim.timer
 sudo pacman -Syu --needed wget greetd kitty git fd neovim ripgrep hyprland keyd network-manager-applet awww ttf-jetbrains-mono-nerd ufw waybar zsh wofi vim \
     dmidecode fastfetch strace iotop papirus-icon-theme power-profiles-daemon pavucontrol grim slurp smartmontools python lazygit yazi base-devel \
     python-gobject xdg-desktop-portal-gtk xdg-desktop-portal-hyprland gnome-system-monitor gnome-themes-extra wl-clipboard noto-fonts-emoji \
-    unzip ncdu bluetui radeontop hyprpicker brightnessctl ffmpeg imagemagick upx jq time fzf tree bat chafa less vulkan-radeon vulkan-tools tree-sitter-cli
+    unzip ncdu bluetui radeontop hyprpicker brightnessctl ffmpeg imagemagick upx jq time fzf tree bat chafa less vulkan-radeon vulkan-tools tree-sitter-cli \
+    swayimg
 
 echo -e "[terminal]\nvt = 1\n\n[default_session]\ncommand = \"start-hyprland\"\nuser = \"$USER\"" | sudo tee /etc/greetd/config.toml
 sudo systemctl enable greetd
@@ -20,7 +21,6 @@ mkdir -p ~/dev
 git clone --depth 1 'https://github.com/ivfiev/...............git' ~/dots
 mkdir -p ~/.config
 mkdir -p ~/Wallpapers
-mkdir -p ~/Wallpapers2
 
 cp -r ~/dots/hypr ~/.config  # monitors & workspaces(!), kb_layout
 cp -r ~/dots/kitty ~/.config
@@ -29,6 +29,7 @@ rm ~/.config/nvim/lazy-lock.json
 cp -r ~/dots/wofi ~/.config
 cp -r ~/dots/waybar ~/.config
 cp -r ~/dots/yazi ~/.config
+cp -r ~/dots/swayimg ~/.config
 cp ~/dots/.zshrc ~/
 cp ~/dots/toggle-waybar.sh ~/
 cp ~/dots/random-wallpapers.sh ~/

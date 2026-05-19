@@ -253,6 +253,14 @@ hl.window_rule({
 	name = "",
 	match = { class = "bluetui|nm-connection-editor|(.*pavucontrol.*)" },
 	float = true,
+	maximize = false,
+	size = { 1200, 900 },
+})
+hl.window_rule({
+	name = "",
+	match = { class = "swayimg" },
+	float = true,
+	maximize = true,
 })
 hl.window_rule({
 	name = "",

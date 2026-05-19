@@ -12,5 +12,6 @@ cp -r ~/.config/waybar $REPO/
 cp -r ~/.config/wofi $REPO/
 cp -r ~/.config/yazi $REPO/
 cp -r ~/.config/nvim $REPO/
+cp -r ~/.config/swayimg $REPO/
 cp ~/.zshrc ~/exec-past-cmd.zsh ~/random-wallpapers.sh ~/toggle-waybar.sh ~/wofi-mullvad-switch-host.py ~/wlogout.sh ~/amdgpu.sh ~/select-wallpaper.sh $REPO/
 cp ~/sync-dots.sh $REPO/

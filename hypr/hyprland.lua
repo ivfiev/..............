@@ -8,18 +8,20 @@ local function exec_output(cmd)
 end
 
 local hostname = exec_output("hostnamectl")
-if hostname:find("Lenovo") then
+local lenovo = hostname:find("Lenovo") ~= nil
+if lenovo then
 	hl.monitor({
-		-- TODO 120hz
 		output = "eDP-1",
-		mode = "preferred",
+		mode = "2880x1800@120",
 		position = "auto",
-		scale = "1.20",
-		vrr = true,
+		scale = "1.666",
+		vrr = 1,
 	})
 	hl.on("hyprland.start", function()
 		hl.exec_cmd("brightnessctl 72%")
+		hl.exec_cmd("bluetoothctl power off")
 	end)
+	hl.bind("SUPER" .. " + SHIFT + apostrophe", hl.dsp.window.move({ workspace = 2 }))
 else
 	-- default to desktop
 	hl.monitor({
@@ -143,7 +145,7 @@ hl.config({
 
 hl.config({
 	input = {
-		kb_layout = "us",
+		kb_layout = lenovo and "gb" or "us",
 		kb_variant = "",
 		kb_model = "",
 		kb_options = "",
@@ -152,7 +154,7 @@ hl.config({
 		sensitivity = 0.333,
 		scroll_factor = 1.5,
 		touchpad = {
-			natural_scroll = false,
+			natural_scroll = true,
 			scroll_factor = 2.43,
 		},
 		repeat_delay = 243,

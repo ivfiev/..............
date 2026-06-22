@@ -269,8 +269,11 @@ hl.window_rule({
 	match = { focus = true },
 	no_blur = true,
 })
--- hl.window_rule({
--- 	name = "",
--- 	match = { class = "(.*atplotlib.*)" },
--- 	float = true,
--- })
+hl.window_rule({
+	name = "",
+	match = { class = "Matplotlib" },
+	float = true,
+	maximize = false,
+	center = true,
+	size = { 1600, 1000 },
+})

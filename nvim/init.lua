@@ -1029,6 +1029,9 @@ require("lazy").setup({
 							},
 						},
 					},
+					init_options = {
+						semanticTokens = true,
+					},
 					on_attach = function(client, _)
 						-- disable gopls formatting
 						client.server_capabilities.documentFormattingProvider = false

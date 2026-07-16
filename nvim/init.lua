@@ -118,6 +118,9 @@ vim.keymap.set("t", "<C-s>", "<Nop>")
 vim.keymap.set({ "n", "x" }, "<C-p>", [["*gp]])
 vim.keymap.set({ "n", "x" }, "<C-S-p>", [["*gP]])
 vim.keymap.set("i", "<C-p>", [[<c-o>"*gp]])
+vim.keymap.set("x", "gy", function() -- gp gP
+	send_key("ygv<Esc>", "x")
+end)
 
 vim.keymap.set({ "x", "n" }, "<C-u>", "<C-u>zz")
 vim.keymap.set({ "x", "n" }, "<C-d>", "<C-d>zz")

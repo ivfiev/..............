@@ -477,6 +477,9 @@ require("vim._core.ui2").enable({
 		},
 	},
 })
+vim.keymap.set("n", "<leader>d", function()
+	require("vim._core.ui2.messages").msg_clear() -- dismiss floating notifications
+end)
 
 -- setup lazy
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"

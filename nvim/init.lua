@@ -98,6 +98,8 @@ vim.keymap.set({ "n", "i", "x" }, "<C-s>", function()
 	-- vim.cmd("redraw")
 end, { silent = true })
 
+vim.keymap.set("n", "<leader>lr", ":lsp restart<CR>")
+
 vim.keymap.set({ "n", "i" }, "<X1Mouse>", "<C-o>")
 vim.keymap.set({ "n", "i" }, "<X2Mouse>", "<C-i>")
 
@@ -232,7 +234,7 @@ vim.keymap.set("n", "'", function()
 	if tonumber(mark) ~= nil then
 		vim.cmd("normal! " .. mark .. "gt")
 	else
-		vim.cmd("normal! '" .. mark)
+		pcall(vim.cmd, "normal! '" .. mark)
 		if string.upper(mark) == mark then
 			pcall(vim.cmd, [[norm! g`"]])
 		end

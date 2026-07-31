@@ -231,15 +231,17 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
 vim.keymap.set("n", "M", "m")
 vim.keymap.set("n", "'", function()
 	local mark = vim.fn.getcharstr()
-	if tonumber(mark) ~= nil then
-		vim.cmd("normal! " .. mark .. "gt")
-	else
-		pcall(vim.cmd, "normal! '" .. mark)
-		if string.upper(mark) == mark then
-			pcall(vim.cmd, [[norm! g`"]])
-		end
+	pcall(vim.cmd, "normal! '" .. mark)
+	if string.upper(mark) == mark then
+		pcall(vim.cmd, [[norm! g`"]])
 	end
 end)
+-- ... and tabs
+for i = 1, 9 do
+	vim.keymap.set({ "n", "t" }, "'" .. i, function()
+		pcall(vim.cmd.tabnext, i)
+	end)
+end
 
 -- highlighting
 vim.keymap.set("n", "*", function()

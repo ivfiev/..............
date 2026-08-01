@@ -228,12 +228,21 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
 })
 
 -- marks
-vim.keymap.set("n", "M", "m")
+vim.keymap.set("n", "M", function()
+	local mark = vim.fn.getcharstr()
+	if string.lower(mark) == mark then
+		vim.cmd("normal! m" .. string.upper(mark))
+	else
+		vim.cmd("normal! m" .. string.lower(mark))
+	end
+end)
 vim.keymap.set("n", "'", function()
 	local mark = vim.fn.getcharstr()
-	pcall(vim.cmd, "normal! '" .. mark)
-	if string.upper(mark) == mark then
+	if string.lower(mark) == mark then
+		pcall(vim.cmd, "normal! '" .. string.upper(mark))
 		pcall(vim.cmd, [[norm! g`"]])
+	else
+		pcall(vim.cmd, "normal! '" .. string.lower(mark))
 	end
 end)
 -- ... and tabs
@@ -485,6 +494,23 @@ vim.keymap.set("n", "<leader>d", function()
 	require("vim._core.ui2.messages").msg_clear() -- dismiss floating notifications
 end)
 
+-- ignoring spam
+if not vim.g.original_notify then
+	vim.g.original_notify = vim.notify
+end
+local skip = {
+	"No configuration selected",
+	"Session terminated",
+}
+vim.notify = function(msg, level, opts)
+	for _, m in ipairs(skip) do
+		if msg:find(m, 1, true) then
+			return
+		end
+	end
+	vim.g.original_notify(msg, level, opts)
+end
+
 -- setup lazy
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
@@ -675,7 +701,7 @@ require("lazy").setup({
 					extensions = {
 						["ui-select"] = {
 							require("telescope.themes").get_cursor({
-								winblend = 10,
+								winblend = 0,
 								previewer = false,
 								layout_config = {
 									width = 0.5,
@@ -1151,6 +1177,139 @@ require("lazy").setup({
 					},
 				},
 			},
+		},
+		-- debuggers
+		{
+			"mfussenegger/nvim-dap",
+			dependencies = {
+				"rcarriga/nvim-dap-ui",
+				"mfussenegger/nvim-dap-python",
+				"leoluz/nvim-dap-go",
+				"williamboman/mason.nvim",
+				"nvim-neotest/nvim-nio",
+				"Weissle/persistent-breakpoints.nvim",
+			},
+			config = function()
+				local dap = require("dap")
+				local dapui = require("dapui")
+
+				local last_args = ""
+				-- python
+				require("dap-python").setup(vim.fn.stdpath("data") .. "/mason/packages/debugpy/venv/bin/python")
+				table.insert(dap.configurations.python, 1, {
+					type = "python",
+					request = "launch",
+					name = "Launch file + args",
+					program = "${file}",
+					args = function()
+						local args_string = vim.fn.input("Args (empty=reuse, -=clear): ")
+						if args_string == "" then
+							args_string = last_args
+						elseif args_string == "-" then
+							last_args = ""
+							args_string = ""
+						else
+							last_args = args_string
+						end
+						return vim.split(args_string, "%s+", { trimempty = true })
+					end,
+					pythonPath = function()
+						return vim.fn.exepath("python")
+					end,
+				})
+				-- go
+				require("dap-go").setup()
+
+				vim.fn.sign_define("DapBreakpoint", { text = "●", texthl = "DapBreakpoint" })
+				vim.fn.sign_define("DapBreakpointCondition", { text = "◆", texthl = "DapBreakpointCondition" })
+				vim.fn.sign_define("DapBreakpointRejected", { text = "✖", texthl = "DapBreakpointRejected" })
+				vim.fn.sign_define("DapStopped", { text = "➜", texthl = "DapStopped", linehl = "DapStoppedLine" })
+
+				vim.api.nvim_set_hl(0, "DapBreakpoint", { fg = "#e06c75" })
+				vim.api.nvim_set_hl(0, "DapBreakpointCondition", { fg = "#e5c07b" })
+				vim.api.nvim_set_hl(0, "DapBreakpointRejected", { fg = "#be5046" })
+				vim.api.nvim_set_hl(0, "DapStopped", { fg = "#98c379" })
+				vim.api.nvim_set_hl(0, "DapStoppedLine", { bg = "#002244" })
+
+				dapui.setup({
+					icons = {
+						expanded = "▼",
+						collapsed = "▶",
+						current_frame = "▶",
+					},
+					controls = {
+						icons = {
+							pause = "⏸",
+							play = "▶",
+							step_into = "⤵",
+							step_over = "⤼",
+							step_out = "⤴",
+							step_back = "⏮",
+							run_last = "↺",
+							terminate = "⏹",
+						},
+					},
+					layouts = {
+						{
+							elements = {
+								"scopes",
+							},
+							size = 72,
+							position = "right",
+						},
+					},
+				})
+
+				vim.api.nvim_create_autocmd("FileType", {
+					pattern = "dap-float",
+					callback = function()
+						vim.keymap.set("n", "q", ":q<CR>", {
+							buffer = true,
+							silent = true,
+							nowait = true,
+						})
+					end,
+				})
+
+				local old_K = vim.fn.maparg("K", "n", false, true)
+
+				require("persistent-breakpoints").setup({
+					load_breakpoints_event = { "BufReadPost" },
+					always_reload = true,
+				})
+				local bp = require("persistent-breakpoints.api")
+				vim.keymap.set("n", "<leader>b", bp.toggle_breakpoint)
+				vim.keymap.set("n", "<leader>B", bp.set_conditional_breakpoint)
+				vim.keymap.set("n", "<leader><BS>b", bp.clear_all_breakpoints)
+				vim.keymap.set("n", "<C-n>", dap.continue)
+				function set_maps()
+					vim.keymap.set("n", "n", dap.step_over)
+					vim.keymap.set("n", "N", dap.step_into)
+					vim.keymap.set("n", "<BS>", dap.step_out)
+					vim.keymap.set("n", "X", dap.terminate)
+					vim.keymap.set("n", "K", require("dap.ui.widgets").hover)
+				end
+				function unset_maps()
+					pcall(vim.keymap.del, "n", "n")
+					pcall(vim.keymap.del, "n", "N")
+					pcall(vim.keymap.del, "n", "<BS>")
+					pcall(vim.keymap.del, "n", "X")
+					vim.keymap.set("n", "K", old_K.callback)
+				end
+
+				dap.listeners.after.event_initialized["dapui_config"] = function()
+					dapui.open({ reset = true })
+					set_maps()
+				end
+				dap.listeners.before.event_terminated["dapui_config"] = function()
+					dapui.close()
+					unset_maps()
+				end
+				dap.listeners.before.event_exited["dapui_config"] = function()
+					dapui.close()
+					unset_maps()
+				end
+			end,
 		},
 	},
 })

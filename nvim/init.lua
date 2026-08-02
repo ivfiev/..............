@@ -195,8 +195,11 @@ vim.api.nvim_create_autocmd("VimEnter", {
 			local cache_dir = vim.fn.stdpath("state")
 			local unique_id = vim.fn.fnamemodify(workspace_path, ":t") .. "_" .. vim.fn.sha256(workspace_path):sub(1, 8)
 			local shadafile = cache_dir .. "/shada/" .. unique_id .. ".shada"
+			if not vim.uv.fs_stat(shadafile) then
+				vim.cmd("wshada! " .. shadafile)
+			end
 			vim.opt.shadafile = shadafile
-			pcall(vim.cmd.rshada)
+			vim.cmd("rshada!")
 			-- restore sesh
 			vim.schedule(function()
 				vim.cmd("SessionLoad")
@@ -226,7 +229,6 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
 		end
 	end,
 })
-
 -- marks
 vim.keymap.set("n", "M", function()
 	local mark = vim.fn.getcharstr()
@@ -495,9 +497,7 @@ vim.keymap.set("n", "<leader>d", function()
 end)
 
 -- ignoring spam
-if not vim.g.original_notify then
-	vim.g.original_notify = vim.notify
-end
+vim.g.original_notify = vim.notify
 local skip = {
 	"No configuration selected",
 	"Session terminated",
@@ -646,6 +646,7 @@ require("lazy").setup({
 		{
 			"nvim-telescope/telescope.nvim",
 			branch = "master",
+			event = "VeryLazy",
 			dependencies = {
 				"nvim-lua/plenary.nvim",
 				"nvim-telescope/telescope-ui-select.nvim",
@@ -672,8 +673,8 @@ require("lazy").setup({
 						layout_strategy = "vertical",
 						layout_config = {
 							prompt_position = "bottom",
-							width = 0.96,
-							height = 0.96,
+							width = 0.89,
+							height = 0.89,
 						},
 						sorting_strategy = "descending",
 						winblend = 0,
@@ -689,6 +690,7 @@ require("lazy").setup({
 							end,
 						},
 						buffers = {
+							previewer = false,
 							sort_mru = true,
 							ignore_current_buffer = false,
 							mappings = {
@@ -811,13 +813,14 @@ require("lazy").setup({
 
 		{
 			"nvim-neo-tree/neo-tree.nvim",
+			keys = { "<leader>fs" },
 			branch = "v3.x",
 			dependencies = {
 				"nvim-lua/plenary.nvim",
 				"MunifTanjim/nui.nvim",
 				"nvim-tree/nvim-web-devicons", -- optional, but recommended
 			},
-			lazy = false, -- neo-tree will lazily load itself
+			lazy = true, -- neo-tree will lazily load itself
 			config = function()
 				require("neo-tree").setup({
 					window = {
@@ -929,6 +932,7 @@ require("lazy").setup({
 
 		{
 			"neovim/nvim-lspconfig",
+			event = "VeryLazy",
 			dependencies = {
 				{ "mason-org/mason.nvim", opts = { ui = { backdrop = 100 } } },
 				"mason-org/mason-lspconfig.nvim",
@@ -1128,7 +1132,7 @@ require("lazy").setup({
 
 		{
 			"Saghen/blink.cmp",
-			event = "VimEnter",
+			event = "VeryLazy",
 			version = "1.*",
 			dependencies = {
 				"folke/lazydev.nvim",
@@ -1181,13 +1185,13 @@ require("lazy").setup({
 		-- debuggers
 		{
 			"mfussenegger/nvim-dap",
+			lazy = true,
+			keys = { "<leader>b", "<leader>B", "<C-n>" },
 			dependencies = {
-				"rcarriga/nvim-dap-ui",
-				"mfussenegger/nvim-dap-python",
-				"leoluz/nvim-dap-go",
-				"williamboman/mason.nvim",
-				"nvim-neotest/nvim-nio",
-				"Weissle/persistent-breakpoints.nvim",
+				{ "rcarriga/nvim-dap-ui", lazy = true },
+				{ "nvim-neotest/nvim-nio", lazy = true },
+				{ "mfussenegger/nvim-dap-python", lazy = true },
+				{ "leoluz/nvim-dap-go", lazy = true },
 			},
 			config = function()
 				local dap = require("dap")
@@ -1253,13 +1257,14 @@ require("lazy").setup({
 						{
 							elements = {
 								"scopes",
+								"stacks", -- 'o'
+								"repl",
 							},
 							size = 72,
 							position = "right",
 						},
 					},
 				})
-
 				vim.api.nvim_create_autocmd("FileType", {
 					pattern = "dap-float",
 					callback = function()
@@ -1271,25 +1276,21 @@ require("lazy").setup({
 					end,
 				})
 
+				vim.keymap.set("n", "<leader>b", dap.toggle_breakpoint)
+				vim.keymap.set("n", "<leader>B", function()
+					dap.set_breakpoint(vim.fn.input("Cond: "))
+				end)
+				vim.keymap.set("n", "<leader><BS>b", dap.clear_breakpoints)
 				local old_K = vim.fn.maparg("K", "n", false, true)
-
-				require("persistent-breakpoints").setup({
-					load_breakpoints_event = { "BufReadPost" },
-					always_reload = true,
-				})
-				local bp = require("persistent-breakpoints.api")
-				vim.keymap.set("n", "<leader>b", bp.toggle_breakpoint)
-				vim.keymap.set("n", "<leader>B", bp.set_conditional_breakpoint)
-				vim.keymap.set("n", "<leader><BS>b", bp.clear_all_breakpoints)
 				vim.keymap.set("n", "<C-n>", dap.continue)
-				function set_maps()
+				local function set_maps()
 					vim.keymap.set("n", "n", dap.step_over)
 					vim.keymap.set("n", "N", dap.step_into)
 					vim.keymap.set("n", "<BS>", dap.step_out)
 					vim.keymap.set("n", "X", dap.terminate)
 					vim.keymap.set("n", "K", require("dap.ui.widgets").hover)
 				end
-				function unset_maps()
+				local function unset_maps()
 					pcall(vim.keymap.del, "n", "n")
 					pcall(vim.keymap.del, "n", "N")
 					pcall(vim.keymap.del, "n", "<BS>")

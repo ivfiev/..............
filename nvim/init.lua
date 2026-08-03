@@ -934,10 +934,8 @@ require("lazy").setup({
 			"neovim/nvim-lspconfig",
 			event = "VeryLazy",
 			dependencies = {
-				{ "mason-org/mason.nvim", opts = { ui = { backdrop = 100 } } },
+				"mason-org/mason.nvim",
 				"mason-org/mason-lspconfig.nvim",
-				"WhoIsSethDaniel/mason-tool-installer.nvim",
-				-- { "j-hui/fidget.nvim",    enabled = false, opts = {} },
 				"Saghen/blink.cmp",
 			},
 			config = function()
@@ -1081,8 +1079,13 @@ require("lazy").setup({
 
 				-- :Mason
 				-- require("mason-tool-installer").setup({ ensure_installed = { ... }})
-				require("mason-lspconfig").setup({})
-				require("mason").setup({ ui = { border = "rounded" } })
+				require("mason").setup({
+					ui = {
+						border = "rounded",
+						backdrop = 100,
+					},
+				})
+				require("mason-lspconfig").setup()
 			end,
 		},
 
@@ -1269,6 +1272,11 @@ require("lazy").setup({
 					pattern = "dap-float",
 					callback = function()
 						vim.keymap.set("n", "q", ":q<CR>", {
+							buffer = true,
+							silent = true,
+							nowait = true,
+						})
+						vim.keymap.set("n", "<Esc>", ":q<CR>", {
 							buffer = true,
 							silent = true,
 							nowait = true,

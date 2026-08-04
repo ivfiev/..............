@@ -3,6 +3,9 @@ vim.g.maplocalleader = " "
 vim.g.have_nerd_font = true
 vim.keymap.set({ "n", "x" }, ",,", ",")
 
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
 vim.opt.number = true
 vim.opt.relativenumber = false
 vim.opt.cursorline = true

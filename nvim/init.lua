@@ -171,6 +171,11 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.cmd([[iabbrev <buffer> ife if err != nil {<CR>return err<C-o>b<Esc>]])
 	end,
 })
+vim.api.nvim_create_autocmd("BufReadPost", {
+	callback = function()
+		pcall(vim.cmd, [[norm! g`"]])
+	end,
+})
 
 -- shadas & sessions
 vim.api.nvim_create_user_command("SessionSave", function()
@@ -218,10 +223,6 @@ vim.api.nvim_create_autocmd("VimEnter", {
 					end
 				end, 20)
 			end)
-		elseif arg ~= "" then
-			vim.schedule(function()
-				pcall(vim.cmd, [[norm! g`"]])
-			end)
 		end
 	end,
 })
@@ -245,7 +246,6 @@ vim.keymap.set("n", "'", function()
 	local mark = vim.fn.getcharstr()
 	if string.lower(mark) == mark then
 		pcall(vim.cmd, "normal! '" .. string.upper(mark))
-		pcall(vim.cmd, [[norm! g`"]])
 	else
 		pcall(vim.cmd, "normal! '" .. string.lower(mark))
 	end

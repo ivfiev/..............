@@ -543,17 +543,17 @@ require("lazy").setup({
 			lazy = false,
 			priority = 1000,
 			config = function()
-				BG = "#070407"
-				vim.g.BG = BG
+				TERM_BG = "#070407"
 				require("tokyonight").setup({
 					on_colors = function(c)
-						c.bg = BG
-						c.bg_dark1 = BG
-						c.bg_dark = BG
-						c.bg_float = BG
-						c.bg_sidebar = BG
-						c.bg_popup = BG
-						c.bg_highlight = BG
+						c.bg = TERM_BG
+						c.bg_dark1 = TERM_BG
+						c.bg_dark = TERM_BG
+						c.bg_float = TERM_BG
+						c.bg_popup = TERM_BG
+						c.bg_sidebar = TERM_BG
+						c.bg_highlight = TERM_BG
+						c.bg_statusline = TERM_BG
 					end,
 					styles = {
 						keywords = { italic = false },
@@ -576,9 +576,9 @@ require("lazy").setup({
 						hl.FlashMatch = { bg = hl.Search.bg, fg = hl.Search.fg, bold = false }
 						hl.FlashLabel = { bg = hl.Search.bg, fg = "#00FFFF", bold = true }
 						hl.BlinkCmpScrollBarThumb = { bg = "#27a1b9" }
-						hl.TabLine = { fg = hl.LineNr.fg, bg = BG }
-						hl.TabLineFill = { bg = BG }
-						hl.TabLineSel = { fg = hl.CursorLineNr.fg, bold = true, bg = BG }
+						hl.TabLine = { fg = hl.LineNr.fg, bg = "NONE" }
+						hl.TabLineFill = { bg = "NONE" }
+						hl.TabLineSel = { fg = hl.CursorLineNr.fg, bold = true, bg = "NONE" }
 						hl.TelescopeResultsComment = { fg = hl.LineNr.fg, bg = "NONE", italic = true }
 						hl.PreProc = { fg = c.purple }
 						hl.Folded = { fg = hl.LineNr.fg, bg = "NONE" }
@@ -759,8 +759,8 @@ require("lazy").setup({
 			dependencies = { "nvim-tree/nvim-web-devicons" },
 			config = function()
 				local theme = require("lualine.themes.tokyonight")
-				theme.normal.c.bg = vim.g.BG
-				theme.inactive.c.bg = vim.g.BG
+				theme.normal.c.bg = "NONE"
+				theme.inactive.c.bg = "NONE"
 				vim.api.nvim_set_hl(0, "Statusline", { link = "Normal" })
 				vim.api.nvim_set_hl(0, "StatuslineNC", { link = "NormalNC" })
 

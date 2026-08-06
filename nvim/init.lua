@@ -180,38 +180,40 @@ vim.api.nvim_create_autocmd("BufReadPost", {
 -- shadas & sessions
 vim.api.nvim_create_user_command("SessionSave", function()
 	local dir = vim.fn.getcwd():gsub("/", "%%")
-	local path = vim.fn.stdpath("data") .. "/sessions/" .. dir .. ".vim"
+	local path = vim.fn.stdpath("state") .. "/sessions/" .. dir .. ".vim"
 	vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
 	vim.cmd("mksession! " .. vim.fn.fnameescape(path))
 end, {})
 vim.api.nvim_create_user_command("SessionLoad", function()
 	local dir = vim.fn.getcwd():gsub("/", "%%")
-	local path = vim.fn.stdpath("data") .. "/sessions/" .. dir .. ".vim"
+	local path = vim.fn.stdpath("state") .. "/sessions/" .. dir .. ".vim"
 	if vim.fn.filereadable(path) == 1 then
 		vim.cmd("source " .. vim.fn.fnameescape(path))
 	end
 end, {})
-
+-- setup shada
+local arg = vim.fn.argv(0)
+if arg ~= "" and vim.fn.isdirectory(arg) == 1 then
+	vim.opt.shadafile = "NONE"
+	vim.g.is_directory_session = true
+end
 vim.api.nvim_create_autocmd("VimEnter", {
 	callback = function()
-		local arg = vim.fn.argv(0)
-		if arg ~= "" and vim.fn.isdirectory(arg) == 1 then
+		if vim.g.is_directory_session then
 			-- force correct cwd if directory passed in
 			vim.cmd("cd " .. arg)
 			-- per-project shadas
 			local workspace_path = vim.fn.getcwd()
-			local cache_dir = vim.fn.stdpath("state")
 			local unique_id = vim.fn.fnamemodify(workspace_path, ":t") .. "_" .. vim.fn.sha256(workspace_path):sub(1, 8)
-			local shadafile = cache_dir .. "/shada/" .. unique_id .. ".shada"
+			local shadafile = vim.fn.stdpath("state") .. "/shada/" .. unique_id .. ".shada"
 			if not vim.uv.fs_stat(shadafile) then
-				vim.cmd("wshada! " .. shadafile)
+				vim.cmd("wshada! " .. shadafile) -- this should write a valid empty shada
 			end
 			vim.opt.shadafile = shadafile
 			vim.cmd("rshada!")
 			-- restore sesh
 			vim.schedule(function()
 				vim.cmd("SessionLoad")
-				vim.g.is_directory_session = true
 				-- kill garbage bufs
 				vim.defer_fn(function()
 					local bufs = vim.api.nvim_list_bufs()

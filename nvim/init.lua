@@ -498,35 +498,25 @@ require("vim._core.ui2").enable({
 		},
 	},
 })
-vim.keymap.set("n", "<leader>d", require("vim._core.ui2.messages").msg_clear) -- dismiss floating notifications
+local ui2messages = require("vim._core.ui2.messages")
+vim.keymap.set("n", "<leader>d", ui2messages.msg_clear) -- dismiss floating notifications
 
--- ignoring spam
-local skip = {
+-- filtering spammy messages
+local spam = {
 	"No configuration selected",
 	"Session terminated",
-	-- "No code actions available",
-	-- "No more valid diagnostics to move to",
 }
-vim.g.orig_notify = vim.notify
-vim.notify = function(msg, level, opts)
-	for _, m in ipairs(skip) do
-		if msg:find(m, 1, true) then
-			return
+vim.g.orig_show_msg = ui2messages.show_msg -- in 13 this may take more params
+ui2messages.show_msg = function(tgt, kind, content, replace_last, append, id)
+	for _, m in ipairs(spam) do
+		for _, c in ipairs(content) do
+			if c[2]:find(m, 1, true) then
+				return
+			end
 		end
 	end
-	vim.g.orig_notify(msg, level, opts)
+	return vim.g.orig_show_msg(tgt, kind, content, replace_last, append, id)
 end
--- vim.g.orig_echo = vim.api.nvim_echo
--- vim.api.nvim_echo = function(chunks, history, opts)
--- 	for _, m in ipairs(skip) do
--- 		for _, c in ipairs(chunks) do
--- 			if c[1]:find(m, 1, true) then
--- 				return
--- 			end
--- 		end
--- 	end
--- 	return vim.g.orig_echo(chunks, history, opts)
--- end
 
 -- setup lazy
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"

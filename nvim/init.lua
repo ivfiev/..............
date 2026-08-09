@@ -2,6 +2,7 @@ vim.g.mapleader = ","
 vim.g.maplocalleader = " "
 vim.g.have_nerd_font = true
 vim.keymap.set({ "n", "x" }, ",,", ",")
+vim.keymap.set({ "n", "x" }, "!", ":norm! ")
 
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
@@ -14,7 +15,7 @@ vim.opt.sidescrolloff = 5
 vim.opt.cmdheight = 0
 vim.opt.foldmethod = "indent"
 vim.opt.foldlevel = 99
-vim.opt.winborder = "single"
+vim.opt.winborder = "rounded"
 vim.opt.shortmess:append("I")
 vim.opt.showtabline = 0
 vim.opt.laststatus = 3
@@ -497,24 +498,35 @@ require("vim._core.ui2").enable({
 		},
 	},
 })
-vim.keymap.set("n", "<leader>d", function()
-	require("vim._core.ui2.messages").msg_clear() -- dismiss floating notifications
-end)
+vim.keymap.set("n", "<leader>d", require("vim._core.ui2.messages").msg_clear) -- dismiss floating notifications
 
 -- ignoring spam
-vim.g.original_notify = vim.notify
 local skip = {
 	"No configuration selected",
 	"Session terminated",
+	-- "No code actions available",
+	-- "No more valid diagnostics to move to",
 }
+vim.g.orig_notify = vim.notify
 vim.notify = function(msg, level, opts)
 	for _, m in ipairs(skip) do
 		if msg:find(m, 1, true) then
 			return
 		end
 	end
-	vim.g.original_notify(msg, level, opts)
+	vim.g.orig_notify(msg, level, opts)
 end
+-- vim.g.orig_echo = vim.api.nvim_echo
+-- vim.api.nvim_echo = function(chunks, history, opts)
+-- 	for _, m in ipairs(skip) do
+-- 		for _, c in ipairs(chunks) do
+-- 			if c[1]:find(m, 1, true) then
+-- 				return
+-- 			end
+-- 		end
+-- 	end
+-- 	return vim.g.orig_echo(chunks, history, opts)
+-- end
 
 -- setup lazy
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"

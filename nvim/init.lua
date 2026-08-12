@@ -107,8 +107,8 @@ vim.keymap.set("n", "<leader>lr", ":lsp restart<CR>")
 vim.keymap.set({ "n", "i" }, "<X1Mouse>", "<C-o>")
 vim.keymap.set({ "n", "i" }, "<X2Mouse>", "<C-i>")
 
-vim.keymap.set({ "n", "x" }, "{", "<Cmd>keepjumps norm! {<CR>", { silent = true })
-vim.keymap.set({ "n", "x" }, "}", "<Cmd>keepjumps norm! }<CR>", { silent = true })
+vim.keymap.set({ "n", "x" }, "{", "<CMD>keepjumps norm! {<CR>", { silent = true })
+vim.keymap.set({ "n", "x" }, "}", "<CMD>keepjumps norm! }<CR>", { silent = true })
 
 vim.keymap.set("n", "<leader><Tab>", ":tab split<CR>", { silent = true })
 vim.keymap.set("n", "u", ":silent undo<CR>", { silent = true })
@@ -504,18 +504,18 @@ vim.keymap.set("n", "<leader>d", ui2messages.msg_clear) -- dismiss floating noti
 -- filtering spammy messages
 local spam = {
 	"No configuration selected",
-	"Session terminated",
+	"Debug adapter disconnected",
 }
-vim.g.orig_show_msg = ui2messages.show_msg -- in 13 this may take more params
-ui2messages.show_msg = function(tgt, kind, content, replace_last, append, id)
-	for _, m in ipairs(spam) do
-		for _, c in ipairs(content) do
+local orig_msg_show = ui2messages.msg_show
+ui2messages.msg_show = function(kind, content, replace_last, _, append, id, trigger)
+	for _, c in ipairs(content) do
+		for _, m in ipairs(spam) do
 			if c[2]:find(m, 1, true) then
 				return
 			end
 		end
 	end
-	return vim.g.orig_show_msg(tgt, kind, content, replace_last, append, id)
+	return orig_msg_show(kind, content, replace_last, _, append, id, trigger)
 end
 
 -- setup lazy

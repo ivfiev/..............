@@ -21,8 +21,8 @@ vim.opt.showtabline = 0
 vim.opt.laststatus = 3
 vim.opt.sessionoptions = "buffers,folds,tabpages" -- options(!), curdir, tabpages
 
-vim.opt.tabstop = 2
-vim.opt.shiftwidth = 2
+vim.opt.tabstop = 4
+vim.opt.shiftwidth = 4
 vim.opt.expandtab = true
 vim.opt.autoindent = false
 vim.opt.smartindent = false
@@ -170,6 +170,7 @@ vim.api.nvim_create_autocmd("FileType", {
 	callback = function()
 		vim.cmd("compiler go")
 		vim.cmd([[iabbrev <buffer> ife if err != nil {<CR>return err<C-o>b<Esc>]])
+		vim.bo.expandtab = false
 	end,
 })
 vim.api.nvim_create_autocmd("BufReadPost", {

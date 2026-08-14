@@ -142,9 +142,12 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 		})
 	end,
 })
-vim.api.nvim_create_autocmd("FileType", {
-	pattern = "help",
-	command = "wincmd L",
+vim.api.nvim_create_autocmd("BufWinEnter", {
+	callback = function()
+		if vim.bo.filetype == "help" then
+			vim.cmd("wincmd L")
+		end
+	end,
 })
 vim.api.nvim_create_autocmd("FileType", {
 	callback = function()
@@ -170,12 +173,6 @@ vim.api.nvim_create_autocmd("FileType", {
 	callback = function()
 		vim.cmd("compiler go")
 		vim.cmd([[iabbrev <buffer> ife if err != nil {<CR>return err<C-o>b<Esc>]])
-		vim.bo.expandtab = false
-	end,
-})
-vim.api.nvim_create_autocmd("BufReadPost", {
-	callback = function()
-		pcall(vim.cmd, [[norm! g`"]])
 	end,
 })
 
@@ -227,6 +224,8 @@ vim.api.nvim_create_autocmd("VimEnter", {
 					end
 				end, 20)
 			end)
+		else
+			pcall(vim.cmd, [[norm! g`"]])
 		end
 	end,
 })
@@ -238,22 +237,13 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
 	end,
 })
 -- marks
-vim.keymap.set("n", "M", function()
-	local mark = vim.fn.getcharstr()
-	if string.lower(mark) == mark then
-		vim.cmd("normal! m" .. string.upper(mark))
-	else
-		vim.cmd("normal! m" .. string.lower(mark))
-	end
-end)
-vim.keymap.set("n", "'", function()
-	local mark = vim.fn.getcharstr()
-	if string.lower(mark) == mark then
-		pcall(vim.cmd, "normal! '" .. string.upper(mark))
-	else
-		pcall(vim.cmd, "normal! '" .. string.lower(mark))
-	end
-end)
+for l in string.gmatch("abcdefghijklmnopqrstuvwxyz", ".") do
+	local u = string.upper(l)
+	vim.keymap.set("n", "M" .. l, "m" .. u)
+	vim.keymap.set("n", "M" .. u, "m" .. l)
+	vim.keymap.set("n", "'" .. l, "'" .. u .. [[g`"]])
+	vim.keymap.set("n", "'" .. u, "`" .. l)
+end
 -- ... and tabs
 for i = 1, 9 do
 	vim.keymap.set({ "n", "t" }, "'" .. i, function()
@@ -734,7 +724,7 @@ require("lazy").setup({
 					builtin.grep_string({ default_text = text }) -- literal str
 				end, { silent = true })
 
-				vim.keymap.set("n", "gH", builtin.help_tags)
+				vim.keymap.set("n", "gh", builtin.help_tags)
 
 				vim.keymap.set("n", "''", builtin.buffers)
 
@@ -745,7 +735,10 @@ require("lazy").setup({
 					})
 				end)
 				vim.keymap.set("n", "gB", function()
-					builtin.live_grep({ grep_open_files = true, prompt_title = "Live Grep (All buffers)" })
+					builtin.live_grep({
+						grep_open_files = true,
+						prompt_title = "Live Grep (All buffers)",
+					})
 				end)
 
 				vim.keymap.set("n", "gm", builtin.marks)

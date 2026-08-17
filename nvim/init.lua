@@ -22,7 +22,7 @@ vim.opt.laststatus = 3
 vim.opt.sessionoptions = "buffers,folds,tabpages" -- options(!), curdir, tabpages
 
 vim.opt.tabstop = 4
-vim.opt.shiftwidth = 4
+vim.opt.shiftwidth = 0
 vim.opt.expandtab = true
 vim.opt.autoindent = false
 vim.opt.smartindent = false
@@ -175,6 +175,11 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.cmd([[iabbrev <buffer> ife if err != nil {<CR>return err<C-o>b<Esc>]])
 	end,
 })
+vim.api.nvim_create_autocmd("BufReadPost", {
+	callback = function()
+		pcall(vim.cmd, [[norm! g`"zz]])
+	end,
+})
 
 -- shadas & sessions
 vim.api.nvim_create_user_command("SessionSave", function()
@@ -194,11 +199,11 @@ end, {})
 local arg = vim.fn.argv(0)
 if arg ~= "" and vim.fn.isdirectory(arg) == 1 then
 	vim.opt.shadafile = "NONE"
-	vim.g.is_directory_session = true
+	IS_DIRECTORY_SESSION = true
 end
 vim.api.nvim_create_autocmd("VimEnter", {
 	callback = function()
-		if vim.g.is_directory_session then
+		if IS_DIRECTORY_SESSION then
 			-- force correct cwd if directory passed in
 			vim.cmd("cd " .. arg)
 			-- per-project shadas
@@ -224,14 +229,12 @@ vim.api.nvim_create_autocmd("VimEnter", {
 					end
 				end, 20)
 			end)
-		else
-			pcall(vim.cmd, [[norm! g`"]])
 		end
 	end,
 })
 vim.api.nvim_create_autocmd("VimLeavePre", {
 	callback = function()
-		if vim.g.is_directory_session then
+		if IS_DIRECTORY_SESSION then
 			vim.cmd("SessionSave")
 		end
 	end,
@@ -241,7 +244,7 @@ for l in string.gmatch("abcdefghijklmnopqrstuvwxyz", ".") do
 	local u = string.upper(l)
 	vim.keymap.set("n", "M" .. l, "m" .. u)
 	vim.keymap.set("n", "M" .. u, "m" .. l)
-	vim.keymap.set("n", "'" .. l, "'" .. u .. [[g`"]])
+	vim.keymap.set("n", "'" .. l, "'" .. u .. [[g`"zz]])
 	vim.keymap.set("n", "'" .. u, "`" .. l)
 end
 -- ... and tabs
@@ -289,11 +292,11 @@ vim.keymap.set("x", "/", function()
 end)
 
 -- terminal
-vim.g.last_term = -1
+LAST_TERM = -1
 vim.keymap.set("n", "<leader>T", ":terminal<CR>", { silent = true })
 vim.keymap.set("n", "<leader>t", function()
-	if vim.api.nvim_buf_is_valid(vim.g.last_term) then
-		vim.api.nvim_set_current_buf(vim.g.last_term)
+	if vim.api.nvim_buf_is_valid(LAST_TERM) then
+		vim.api.nvim_set_current_buf(LAST_TERM)
 	else
 		vim.cmd("terminal", { silent = true })
 	end
@@ -301,14 +304,13 @@ end, { silent = true })
 vim.keymap.set("t", "<S-Esc>", [[<C-\><C-n>]], { silent = true })
 vim.keymap.set("t", "<C-o>", [[<C-\><C-n>:b#<Cr>]], { silent = true })
 vim.api.nvim_create_autocmd({ "TermOpen", "BufEnter", "TabEnter", "WinResized" }, {
-	pattern = "term://*",
 	callback = function()
-		vim.schedule(function()
-			if vim.bo.buftype == "terminal" then
-				vim.g.last_term = vim.api.nvim_get_current_buf()
+		if vim.bo.buftype == "terminal" then
+			vim.schedule(function()
+				LAST_TERM = vim.api.nvim_get_current_buf()
 				vim.cmd("startinsert")
-			end
-		end)
+			end)
+		end
 	end,
 })
 vim.keymap.set({ "i", "n" }, "<C-/>", function()
@@ -321,27 +323,27 @@ vim.keymap.set({ "i", "n" }, "<C-/>", function()
 		end
 	end
 	if not term then
-		local cols = vim.g.terminal_cols or vim.o.columns / 2.5
-		local rows = vim.g.terminal_rows or vim.o.lines / 2.5
+		local cols = TERM_COLS or vim.o.columns / 2.5
+		local rows = TERM_ROWS or vim.o.lines / 2.5
 		local orientation = cols < vim.o.columns / 1.25 and "v" or ""
 		local size = orientation == "v" and cols or rows
 		vim.cmd(string.format("silent! %d%ssplit", size, orientation))
-		if vim.api.nvim_buf_is_valid(vim.g.last_term) then
-			vim.api.nvim_set_current_buf(vim.g.last_term)
+		if vim.api.nvim_buf_is_valid(LAST_TERM) then
+			vim.api.nvim_set_current_buf(LAST_TERM)
 		else
 			vim.cmd("terminal")
 		end
 	else
-		vim.g.terminal_cols = vim.api.nvim_win_get_width(term)
-		vim.g.terminal_rows = vim.api.nvim_win_get_height(term)
+		TERM_COLS = vim.api.nvim_win_get_width(term)
+		TERM_ROWS = vim.api.nvim_win_get_height(term)
 		vim.api.nvim_win_close(term, true)
 	end
 end)
 vim.keymap.set("t", "<C-/>", function()
 	local ws = vim.api.nvim_tabpage_list_wins(vim.api.nvim_get_current_tabpage())
 	if #ws > 1 then
-		vim.g.terminal_cols = vim.api.nvim_win_get_width(0)
-		vim.g.terminal_rows = vim.api.nvim_win_get_height(0)
+		TERM_COLS = vim.api.nvim_win_get_width(0)
+		TERM_ROWS = vim.api.nvim_win_get_height(0)
 		vim.cmd("close")
 	end
 end)
@@ -688,7 +690,6 @@ require("lazy").setup({
 							end,
 						},
 						buffers = {
-							previewer = false,
 							sort_mru = true,
 							ignore_current_buffer = false,
 							mappings = {

@@ -615,9 +615,11 @@ require("lazy").setup({
 				local installed = treesitter.get_installed()
 				local function start_treesitter(buf, lang)
 					vim.treesitter.start(buf, lang)
-					vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
 					vim.wo[0][0].foldexpr = "v:lua.vim.treesitter.foldexpr()"
 					vim.wo[0][0].foldmethod = "expr"
+					if vim.bo.filetype ~= "go" then
+						vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+					end
 				end
 				vim.api.nvim_create_autocmd("FileType", {
 					callback = function(ev)

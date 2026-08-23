@@ -246,6 +246,12 @@ hl.window_rule({
 })
 hl.window_rule({
 	name = "",
+	match = { class = "steam" },
+	float = true,
+	size = { 400, 400 },
+})
+hl.window_rule({
+	name = "",
 	match = { focus = true },
 	no_blur = true,
 })

@@ -1,39 +1,39 @@
-swayimg.set_mode("gallery")
+swayimg.mode = "gallery"
 
 swayimg.gallery.on_key("h", function()
-	swayimg.gallery.switch_image("left")
+	swayimg.gallery.select("left")
 end)
 
 swayimg.gallery.on_key("l", function()
-	swayimg.gallery.switch_image("right")
+	swayimg.gallery.select("right")
 end)
 
 swayimg.gallery.on_key("k", function()
-	swayimg.gallery.switch_image("up")
+	swayimg.gallery.select("up")
 end)
 
 swayimg.gallery.on_key("j", function()
-	swayimg.gallery.switch_image("down")
+	swayimg.gallery.select("down")
 end)
 
 swayimg.gallery.on_key("Ctrl-u", function()
-	swayimg.gallery.switch_image("pgup")
+	swayimg.gallery.select("pgup")
 end)
 
 swayimg.gallery.on_key("Ctrl-d", function()
-	swayimg.gallery.switch_image("pgdown")
+	swayimg.gallery.select("pgdown")
 end)
 
 swayimg.gallery.on_key("j", function()
-	swayimg.gallery.switch_image("down")
+	swayimg.gallery.select("down")
 end)
 
 swayimg.viewer.on_key("Escape", function()
-	swayimg.set_mode("gallery")
+	swayimg.mode = "gallery"
 end)
 
 swayimg.viewer.on_key("q", function()
-	swayimg.set_mode("gallery")
+	swayimg.mode = "gallery"
 end)
 
 swayimg.gallery.on_key("Escape", function()
@@ -46,28 +46,28 @@ end)
 
 swayimg.viewer.on_mouse("ScrollUp", function()
 	local pos = swayimg.get_mouse_pos()
-	local scale = swayimg.viewer.get_scale()
+	local scale = swayimg.viewer.scale
 	scale = scale + scale / 10
 	swayimg.viewer.set_abs_scale(scale, pos.x, pos.y)
 end)
 
 swayimg.viewer.on_mouse("ScrollDown", function()
 	local pos = swayimg.get_mouse_pos()
-	local scale = swayimg.viewer.get_scale()
+	local scale = swayimg.viewer.scale
 	scale = scale - scale / 10
 	swayimg.viewer.set_abs_scale(scale, pos.x, pos.y)
 end)
 
 swayimg.viewer.on_key("i", function()
 	local pos = swayimg.get_mouse_pos()
-	local scale = swayimg.viewer.get_scale()
+	local scale = swayimg.viewer.scale
 	scale = scale + scale / 10
 	swayimg.viewer.set_abs_scale(scale, pos.x, pos.y)
 end)
 
 swayimg.viewer.on_key("o", function()
 	local pos = swayimg.get_mouse_pos()
-	local scale = swayimg.viewer.get_scale()
+	local scale = swayimg.viewer.scale
 	scale = scale - scale / 10
 	swayimg.viewer.set_abs_scale(scale, pos.x, pos.y)
 end)

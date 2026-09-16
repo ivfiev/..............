@@ -40,8 +40,7 @@ hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
 hl.on("hyprland.start", function()
 	hl.exec_cmd("awww-daemon")
 	hl.exec_cmd("nm-applet")
-	-- hl.exec_cmd("waybar") TODO monitor updates
-	hl.exec_cmd("~/dev/Waybar/build/waybar")
+	hl.exec_cmd("waybar")
 	hl.exec_cmd([[sleep 2 && gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"]])
 	hl.exec_cmd([[sleep 2 && gsettings set org.gnome.desktop.interface gtk-theme "Adwaita-dark"]])
 	hl.exec_cmd([[sleep 2 && gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark"]])
@@ -248,7 +247,8 @@ hl.window_rule({
 	name = "",
 	match = { class = "steam" },
 	float = true,
-	size = { 400, 400 },
+	center = true,
+	size = { 1200, 800 },
 })
 hl.window_rule({
 	name = "",
@@ -262,4 +262,14 @@ hl.window_rule({
 	maximize = false,
 	center = true,
 	size = { 1600, 1000 },
+})
+hl.window_rule({
+	name = "",
+	match = { class = "csxax" },
+	border_size = 0,
+	rounding = 0,
+	no_anim = 1,
+	no_blur = 1,
+	no_focus = 1,
+	no_shadow = 1,
 })

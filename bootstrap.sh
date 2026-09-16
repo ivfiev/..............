@@ -88,3 +88,4 @@ reboot
 # rocm setup & undervolt in amdgpu.sh
 # .zsh_history
 # powerprofilesctl
+# mullvad-vpn

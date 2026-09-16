@@ -412,14 +412,13 @@ end)
 -- git diffs
 DIFF_TAB = nil
 vim.keymap.set({ "n", "i" }, [[<C-\>]], function()
-	local diff_tab = DIFF_TAB
-	if diff_tab == vim.api.nvim_get_current_tabpage() then
+	if DIFF_TAB == vim.api.nvim_get_current_tabpage() then
 		local ok = pcall(vim.cmd.tabnext, "#")
 		if not ok then
 			pcall(vim.cmd.tabnext, -1)
 		end
-	elseif diff_tab then
-		vim.api.nvim_set_current_tabpage(diff_tab)
+	elseif DIFF_TAB then
+		vim.api.nvim_set_current_tabpage(DIFF_TAB)
 	else
 		vim.cmd("CodeDiff")
 	end
@@ -437,7 +436,7 @@ vim.api.nvim_create_autocmd("User", {
 		DIFF_TAB = nil
 	end,
 })
-vim.keymap.set("n", "<leader>gp", function()
+vim.keymap.set("n", "<leader>P", function()
 	vim.ui.input({ prompt = "Commit: ", default = "wip" }, function(msg)
 		if msg == nil or msg == "" then
 			return

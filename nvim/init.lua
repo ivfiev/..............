@@ -234,6 +234,9 @@ vim.api.nvim_create_autocmd("VimEnter", {
 })
 vim.api.nvim_create_autocmd("VimLeavePre", {
 	callback = function()
+		if DIFF_TAB then
+			pcall(vim.cmd.tabclose, vim.api.nvim_tabpage_get_number(DIFF_TAB))
+		end
 		if IS_DIRECTORY_SESSION then
 			vim.cmd("SessionSave")
 		end
@@ -404,6 +407,63 @@ vim.keymap.set("n", "<leader>gb", function()
 		virt_text("show_line", BLAME_NS, msg, line)
 	end
 	vim.b.blame_on = true
+end)
+
+-- git diffs
+DIFF_TAB = nil
+vim.keymap.set({ "n", "i" }, [[<C-\>]], function()
+	local diff_tab = DIFF_TAB
+	if diff_tab == vim.api.nvim_get_current_tabpage() then
+		local ok = pcall(vim.cmd.tabnext, "#")
+		if not ok then
+			pcall(vim.cmd.tabnext, -1)
+		end
+	elseif diff_tab then
+		vim.api.nvim_set_current_tabpage(diff_tab)
+	else
+		vim.cmd("CodeDiff")
+	end
+end)
+vim.api.nvim_create_autocmd("User", {
+	pattern = "CodeDiffOpen",
+	callback = function(evt)
+		DIFF_TAB = evt.data.tabpage
+		vim.cmd.tabmove("$")
+	end,
+})
+vim.api.nvim_create_autocmd("User", {
+	pattern = "CodeDiffClose",
+	callback = function()
+		DIFF_TAB = nil
+	end,
+})
+vim.keymap.set("n", "<leader>gp", function()
+	vim.ui.input({ prompt = "Commit: ", default = "wip" }, function(msg)
+		if msg == nil or msg == "" then
+			return
+		end
+		vim.system({ "git", "commit", "-m", msg }, {}, function(out)
+			vim.schedule(function()
+				vim.notify(out.stdout:gsub("[\n]$", ""), out.code == 0 and vim.log.levels.INFO or vim.log.levels.ERROR)
+				if out.code ~= 0 then
+					vim.notify(out.stderr:gsub("[\n]$", ""), vim.log.levels.ERROR)
+					return
+				end
+				vim.system({ "git", "push" }, {}, function(out)
+					vim.schedule(function()
+						vim.notify(
+							out.stdout:gsub("[\n]$", ""),
+							out.code == 0 and vim.log.levels.INFO or vim.log.levels.ERROR
+						)
+						if out.code ~= 0 then
+							vim.notify(out.stderr:gsub("[\n]$", ""), vim.log.levels.ERROR)
+							return
+						end
+					end)
+				end)
+			end)
+		end)
+	end)
 end)
 
 vim.lsp.log.set_level("ERROR")
@@ -785,9 +845,12 @@ require("lazy").setup({
 								fmt = function(name, ctx)
 									local win = vim.api.nvim_tabpage_get_win(ctx.tabId)
 									local buf = vim.api.nvim_win_get_buf(win)
-									if vim.bo[buf].buftype ~= "" then
+									if ctx.tabId == DIFF_TAB then
+										name = "git-diff"
+									elseif vim.bo[buf].buftype ~= "" then
 										name = vim.bo[buf].buftype
-									elseif vim.bo[buf].modified then
+									end
+									if vim.bo[buf].modified then
 										name = name .. " ✎"
 									end
 									if #vim.api.nvim_list_tabpages() > 1 then
@@ -870,6 +933,21 @@ require("lazy").setup({
 				})
 				vim.keymap.set({ "n" }, "<leader>fs", "<Cmd>Neotree filesystem reveal<CR>", { silent = true })
 			end,
+		},
+
+		{
+			"esmuellert/codediff.nvim",
+			cmd = "CodeDiff",
+			opts = {
+				diff = {
+					layout = "inline",
+				},
+				highlights = {
+					line_insert = "#003333",
+					line_delete = "#330033",
+					char_brightness = 1.0,
+				},
+			},
 		},
 
 		{

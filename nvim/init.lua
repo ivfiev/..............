@@ -411,39 +411,8 @@ end)
 
 -- git diffs
 DIFF_TAB = nil
-vim.keymap.set({ "n", "i" }, [[<C-\>]], function()
-	if DIFF_TAB == vim.api.nvim_get_current_tabpage() then
-		local ok = pcall(vim.cmd.tabnext, "#")
-		if not ok then
-			pcall(vim.cmd.tabnext, -1)
-		end
-	elseif DIFF_TAB then
-		vim.api.nvim_set_current_tabpage(DIFF_TAB)
-	else
-		vim.cmd("CodeDiff")
-	end
-end)
-vim.api.nvim_create_autocmd("User", {
-	pattern = "CodeDiffOpen",
-	callback = function(evt)
-		DIFF_TAB = evt.data.tabpage
-		vim.cmd.tabmove("$")
-	end,
-})
-vim.api.nvim_create_autocmd("User", {
-	pattern = "CodeDiffClose",
-	callback = function()
-		DIFF_TAB = nil
-	end,
-})
-vim.api.nvim_create_autocmd("TabLeave", { -- raise this, should auto-reload
-	callback = function()
-		if vim.api.nvim_get_current_tabpage() == DIFF_TAB then
-			vim.cmd("checktime")
-		end
-	end,
-})
-vim.keymap.set("n", "<leader>P", function()
+vim.keymap.set("n", "<leader>gd", ":DiffviewToggle<CR>", { silent = true })
+vim.keymap.set("n", "<leader>gp", function()
 	vim.ui.input({ prompt = "Commit: ", default = "wip" }, function(msg)
 		if msg == nil or msg == "" then
 			return
@@ -561,6 +530,7 @@ vim.keymap.set("n", "<leader>d", ui2messages.msg_clear) -- dismiss floating noti
 local spam = {
 	"No configuration selected",
 	"Debug adapter disconnected",
+	"File restored from index. Undo with",
 }
 local orig_msg_show = ui2messages.msg_show
 ui2messages.msg_show = function(kind, content, replace_last, _, append, id, trigger)
@@ -939,23 +909,54 @@ require("lazy").setup({
 		},
 
 		{
-			"esmuellert/codediff.nvim",
-			cmd = "CodeDiff",
+			"dlyongemallo/diffview-plus.nvim",
+			cmd = "DiffviewToggle",
 			opts = {
-				diff = {
-					layout = "inline",
-				},
-				highlights = {
-					line_insert = "#003333",
-					line_delete = "#330033",
-					char_brightness = 1.0,
-				},
-				keymaps = {
-					view = {
-						toggle_stage = " ",
+				enhanced_diff_hl = false,
+				view = {
+					default = {
+						layout = "diff1_inline",
+					},
+					inline = {
+						deletion_highlight = "full_width",
 					},
 				},
+				file_panel = {
+					listing_style = "list", -- "tree"
+					list_options = {
+						path_style = "basename",
+					},
+					win_config = {
+						width = "auto", -- little jittery
+					},
+					show_branch_name = true,
+					always_show_sections = true,
+				},
+				hooks = {
+					view_opened = function(view)
+						DIFF_TAB = view.tabpage
+					end,
+					view_closed = function()
+						DIFF_TAB = nil
+					end,
+				},
 			},
+			config = function(_, opts)
+				require("diffview").setup(opts)
+				vim.api.nvim_set_hl(0, "DiffviewDiffDelete", { bg = "#250000" })
+				vim.api.nvim_set_hl(0, "DiffviewDiffChange", { bg = "#002500" })
+				vim.api.nvim_set_hl(0, "DiffviewDiffTextInline", { bg = "#002500" })
+				vim.api.nvim_set_hl(0, "DiffviewStatusModified", { link = "LineNr" })
+				vim.api.nvim_set_hl(0, "DiffviewFilePanelSelected", { link = "CursorLineNr" })
+				vim.api.nvim_set_hl(0, "DiffviewFilePanelFileName", { link = "LineNr" })
+				vim.api.nvim_set_hl(0, "DiffviewFilePanelInsertions", { bold = true, fg = "#009900" })
+				vim.api.nvim_set_hl(0, "DiffviewFilePanelDeletions", { bold = true, fg = "#990000" })
+				vim.api.nvim_set_hl(0, "DiffviewNormal", { link = "LineNr" })
+				vim.api.nvim_set_hl(0, "DiffviewDim1", { link = "LineNr" })
+				local lineNr = vim.api.nvim_get_hl(0, { name = "LineNr" })
+				vim.api.nvim_set_hl(0, "DiffviewFilePanelPath", { fg = lineNr.fg, bg = lineNr.bg, italic = true })
+				-- X undo cmd in :mess
+			end,
 		},
 
 		{

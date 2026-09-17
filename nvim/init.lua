@@ -436,6 +436,13 @@ vim.api.nvim_create_autocmd("User", {
 		DIFF_TAB = nil
 	end,
 })
+vim.api.nvim_create_autocmd("TabLeave", { -- raise this, should auto-reload
+	callback = function()
+		if vim.api.nvim_get_current_tabpage() == DIFF_TAB then
+			vim.cmd("checktime")
+		end
+	end,
+})
 vim.keymap.set("n", "<leader>P", function()
 	vim.ui.input({ prompt = "Commit: ", default = "wip" }, function(msg)
 		if msg == nil or msg == "" then
@@ -443,23 +450,20 @@ vim.keymap.set("n", "<leader>P", function()
 		end
 		vim.system({ "git", "commit", "-m", msg }, {}, function(out)
 			vim.schedule(function()
-				vim.notify(out.stdout:gsub("[\n]$", ""), out.code == 0 and vim.log.levels.INFO or vim.log.levels.ERROR)
 				if out.code ~= 0 then
-					vim.notify(out.stderr:gsub("[\n]$", ""), vim.log.levels.ERROR)
-					return
-				end
-				vim.system({ "git", "push" }, {}, function(out)
-					vim.schedule(function()
-						vim.notify(
-							out.stdout:gsub("[\n]$", ""),
-							out.code == 0 and vim.log.levels.INFO or vim.log.levels.ERROR
-						)
-						if out.code ~= 0 then
-							vim.notify(out.stderr:gsub("[\n]$", ""), vim.log.levels.ERROR)
-							return
-						end
+					vim.notify((out.stdout .. out.stderr):gsub("[\n]$", ""), vim.log.levels.ERROR)
+				else
+					vim.notify((out.stdout .. out.stderr):gsub("[\n]$", ""), vim.log.levels.INFO)
+					vim.system({ "git", "push" }, {}, function(out)
+						vim.schedule(function()
+							if out.code ~= 0 then
+								vim.notify((out.stdout .. out.stderr):gsub("[\n]$", ""), vim.log.levels.ERROR)
+							else
+								vim.notify((out.stdout .. out.stderr):gsub("[\n]$", ""), vim.log.levels.INFO)
+							end
+						end)
 					end)
-				end)
+				end
 			end)
 		end)
 	end)
@@ -945,6 +949,11 @@ require("lazy").setup({
 					line_insert = "#003333",
 					line_delete = "#330033",
 					char_brightness = 1.0,
+				},
+				keymaps = {
+					view = {
+						toggle_stage = " ",
+					},
 				},
 			},
 		},

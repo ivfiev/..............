@@ -924,7 +924,7 @@ require("lazy").setup({
 				file_panel = {
 					listing_style = "list", -- "tree"
 					list_options = {
-						path_style = "basename",
+						path_style = "full",
 					},
 					win_config = {
 						width = "auto", -- little jittery
@@ -943,9 +943,10 @@ require("lazy").setup({
 			},
 			config = function(_, opts)
 				require("diffview").setup(opts)
-				vim.api.nvim_set_hl(0, "DiffviewDiffDelete", { bg = "#250000" })
-				vim.api.nvim_set_hl(0, "DiffviewDiffChange", { bg = "#002500" })
-				vim.api.nvim_set_hl(0, "DiffviewDiffTextInline", { bg = "#002500" })
+				vim.api.nvim_set_hl(0, "DiffviewDiffDelete", { bg = "#551100" })
+				vim.api.nvim_set_hl(0, "DiffviewDiffChange", { bg = "#004411" })
+				vim.api.nvim_set_hl(0, "DiffviewDiffTextInline", { link = "DiffviewDiffChange" })
+				vim.api.nvim_set_hl(0, "DiffviewDiffAdd", { link = "DiffviewDiffChange" })
 				vim.api.nvim_set_hl(0, "DiffviewStatusModified", { link = "LineNr" })
 				vim.api.nvim_set_hl(0, "DiffviewFilePanelSelected", { link = "CursorLineNr" })
 				vim.api.nvim_set_hl(0, "DiffviewFilePanelFileName", { link = "LineNr" })

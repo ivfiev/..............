@@ -76,8 +76,6 @@ vim.opt.showmode = false
 vim.opt.mouse = "a"
 
 vim.opt.hlsearch = false
-vim.ignorecase = true
-vim.smartcase = true
 
 vim.opt.clipboard = "unnamedplus" -- +clipboard
 vim.opt.swapfile = false
@@ -104,8 +102,8 @@ end, { silent = true })
 
 vim.keymap.set("n", "<leader>lr", ":lsp restart<CR>")
 
-vim.keymap.set({ "n", "i" }, "<X1Mouse>", "<C-o>")
-vim.keymap.set({ "n", "i" }, "<X2Mouse>", "<C-i>")
+vim.keymap.set("n", "<X1Mouse>", "<C-o>")
+vim.keymap.set("n", "<X2Mouse>", "<C-i>")
 
 vim.keymap.set({ "n", "x" }, "{", "<CMD>keepjumps norm! {<CR>", { silent = true })
 vim.keymap.set({ "n", "x" }, "}", "<CMD>keepjumps norm! }<CR>", { silent = true })
@@ -214,7 +212,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
 	callback = function()
 		if IS_DIRECTORY_SESSION then
 			-- force correct cwd if directory passed in
-			vim.cmd("cd " .. arg)
+			vim.cmd("cd " .. arg) -- TODO escape? eg %'s in name
 			-- per-project shadas
 			local workspace_path = vim.fn.getcwd()
 			local unique_id = vim.fn.fnamemodify(workspace_path, ":t") .. "_" .. vim.fn.sha256(workspace_path):sub(1, 8)
@@ -401,7 +399,7 @@ vim.keymap.set("n", "<leader>gp", function()
 		if not msg or msg == "" then
 			return
 		end
-		vim.cmd("G commit -m " .. msg)
+		vim.cmd("G commit -m " .. vim.fn.shellescape(msg))
 		vim.cmd("G push")
 	end)
 end)
@@ -714,12 +712,7 @@ require("lazy").setup({
 
 				vim.keymap.set("n", "gf", builtin.find_files)
 				vim.keymap.set("n", "gF", builtin.live_grep) -- regex
-				vim.keymap.set("x", "gF", function()
-					vim.cmd('normal! "zy')
-					local text = vim.fn.getreg("z")
-					text = text:gsub("[\r\n]+$", "")
-					builtin.grep_string({ default_text = text }) -- literal str
-				end, { silent = true })
+				vim.keymap.set("x", "gF", builtin.grep_string)
 
 				vim.keymap.set("n", "gh", builtin.help_tags)
 
@@ -914,7 +907,7 @@ require("lazy").setup({
 				merge_hls("diffAdded", "DiffviewStatusUntracked", { bg = "NONE", bold = true })
 				merge_hls("diffRemoved", "DiffviewStatusDeleted", { bg = "NONE", bold = true })
 				merge_hls("diffAdded", "DiffviewStatusAdded", { bg = "NONE", bold = true })
-				vim.api.nvim_set_hl(0, "DiffviewFilePanelSelected", { link = "CursorLineNr" }) -------- simple func to drop bg, set to none
+				vim.api.nvim_set_hl(0, "DiffviewFilePanelSelected", { link = "CursorLineNr" })
 				vim.api.nvim_set_hl(0, "DiffviewFilePanelFileName", { link = "LineNr" })
 				vim.api.nvim_set_hl(0, "DiffviewFilePanelInsertions", { bold = true, fg = "#009900" })
 				vim.api.nvim_set_hl(0, "DiffviewFilePanelDeletions", { bold = true, fg = "#990000" })
@@ -947,20 +940,6 @@ require("lazy").setup({
 			"windwp/nvim-autopairs",
 			event = "InsertEnter",
 			opts = {},
-		},
-
-		{
-			"numToStr/Comment.nvim",
-			event = "VeryLazy",
-			opts = {
-				toggler = {
-					line = "gc",
-				},
-				mappings = {
-					basic = false,
-					extra = false,
-				},
-			},
 		},
 
 		{
@@ -1064,13 +1043,7 @@ require("lazy").setup({
 						source = "if_many",
 						spacing = 2,
 						format = function(diagnostic)
-							local diagnostic_message = {
-								[vim.diagnostic.severity.ERROR] = diagnostic.message,
-								[vim.diagnostic.severity.WARN] = diagnostic.message,
-								[vim.diagnostic.severity.INFO] = diagnostic.message,
-								[vim.diagnostic.severity.HINT] = diagnostic.message,
-							}
-							return diagnostic_message[diagnostic.severity]
+							return diagnostic.message
 						end,
 					},
 				})
@@ -1086,15 +1059,6 @@ require("lazy").setup({
 					},
 				})
 				vim.lsp.config("clangd", { capabilities = capabilities })
-				vim.lsp.config("rust_analyzer", {
-					capabilities = capabilities,
-					settings = {
-						["rust-analyzer"] = {
-							cargo = { all_features = true },
-							checkOnSave = { command = "clippy" },
-						},
-					},
-				})
 				vim.lsp.config("basedpyright", {
 					capabilities = capabilities,
 					settings = {
@@ -1105,15 +1069,6 @@ require("lazy").setup({
 							},
 						},
 					},
-				})
-				vim.lsp.config("hls", {
-					capabilities = capabilities,
-					filetypes = { "haskell", "lhaskell", "cabal" },
-					on_attach = function(client, _)
-						-- disable hls formatting
-						client.server_capabilities.documentFormattingProvider = false
-						client.server_capabilities.documentRangeFormattingProvider = false
-					end,
 				})
 				vim.lsp.config("gopls", {
 					capabilities = capabilities,
@@ -1162,22 +1117,19 @@ require("lazy").setup({
 					"<leader>=",
 					function()
 						require("conform").format({ async = true, lsp_format = "fallback" })
-						send_key("<Esc>", "n")
 					end,
 					mode = "",
 					desc = "[F]ormat buffer",
 				},
 			},
 			opts = {
-				async = true,
-				notify_on_error = false,
 				format_on_save = function(bufnr)
 					local disable_filetypes = { c = true, cpp = true, cs = true } -- .editorconfig
 					if disable_filetypes[vim.bo[bufnr].filetype] then
 						return nil
 					else
 						return {
-							timeout_ms = 500,
+							timeout_ms = 1000, -- blocks for up to 1sec before saves
 							lsp_format = "fallback",
 						}
 					end

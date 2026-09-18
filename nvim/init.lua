@@ -396,6 +396,15 @@ vim.keymap.set("n", "<leader>gd", function()
 		end)
 	end
 end)
+vim.keymap.set("n", "<leader>gp", function()
+	vim.ui.input({ prompt = "Commit: ", default = "wip" }, function(msg)
+		if not msg or msg == "" then
+			return
+		end
+		vim.cmd("G commit -m " .. msg)
+		vim.cmd("G push")
+	end)
+end)
 
 -- general
 vim.lsp.log.set_level("ERROR")

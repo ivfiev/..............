@@ -201,6 +201,15 @@ if arg ~= "" and vim.fn.isdirectory(arg) == 1 then
 	vim.opt.shadafile = "NONE"
 	IS_DIRECTORY_SESSION = true
 end
+local function drop_garbage_bufs() -- only leaves normal project files
+	local bufs = vim.api.nvim_list_bufs()
+	for _, buf in ipairs(bufs) do
+		local fullpath = vim.api.nvim_buf_get_name(buf)
+		if vim.bo[buf].buftype ~= "" or vim.fn.filereadable(fullpath) == 0 then
+			vim.api.nvim_buf_delete(buf, { force = true })
+		end
+	end
+end
 vim.api.nvim_create_autocmd("VimEnter", {
 	callback = function()
 		if IS_DIRECTORY_SESSION then
@@ -219,24 +228,23 @@ vim.api.nvim_create_autocmd("VimEnter", {
 			vim.schedule(function()
 				vim.cmd("SessionLoad")
 				-- kill garbage bufs
-				vim.defer_fn(function()
-					local bufs = vim.api.nvim_list_bufs()
-					for _, buf in ipairs(bufs) do
-						local bufname = vim.api.nvim_buf_get_name(buf)
-						if vim.bo[buf].buftype ~= "" or vim.fn.filereadable(bufname) == 0 then
-							vim.api.nvim_buf_delete(buf, { force = true })
-						end
-					end
-				end, 20)
+				vim.defer_fn(drop_garbage_bufs, 25)
 			end)
 		end
 	end,
 })
 vim.api.nvim_create_autocmd("VimLeavePre", {
 	callback = function()
-		if DIFF_TAB then
-			pcall(vim.cmd.tabclose, vim.api.nvim_tabpage_get_number(DIFF_TAB))
+		-- drop diff tabs
+		local tabs = vim.api.nvim_list_tabpages()
+		for _, t in ipairs(tabs) do
+			if vim.t[t].is_git_diff then
+				pcall(vim.cmd.tabclose, vim.api.nvim_tabpage_get_number(t))
+			end
 		end
+		-- drop garbage bufs again for good measure
+		drop_garbage_bufs()
+		-- if in a project - store session
 		if IS_DIRECTORY_SESSION then
 			vim.cmd("SessionSave")
 		end
@@ -301,11 +309,11 @@ vim.keymap.set("n", "<leader>t", function()
 	if vim.api.nvim_buf_is_valid(LAST_TERM) then
 		vim.api.nvim_set_current_buf(LAST_TERM)
 	else
-		vim.cmd("terminal", { silent = true })
+		vim.cmd("terminal")
 	end
-end, { silent = true })
-vim.keymap.set("t", "<S-Esc>", [[<C-\><C-n>]], { silent = true })
-vim.keymap.set("t", "<C-o>", [[<C-\><C-n>:b#<Cr>]], { silent = true })
+end)
+vim.keymap.set("t", "<S-Esc>", [[<C-\><C-n>]])
+vim.keymap.set("t", "<C-o>", [[<C-\><C-n><C-o>]])
 vim.api.nvim_create_autocmd({ "TermOpen", "BufEnter", "TabEnter", "WinResized" }, {
 	callback = function()
 		if vim.bo.buftype == "terminal" then
@@ -317,7 +325,7 @@ vim.api.nvim_create_autocmd({ "TermOpen", "BufEnter", "TabEnter", "WinResized" }
 	end,
 })
 vim.keymap.set({ "i", "n" }, "<C-/>", function()
-	local ws = vim.api.nvim_tabpage_list_wins(vim.api.nvim_get_current_tabpage())
+	local ws = vim.api.nvim_tabpage_list_wins(0)
 	local term = nil
 	for _, w in ipairs(ws) do
 		if vim.bo[vim.api.nvim_win_get_buf(w)].buftype == "terminal" then
@@ -343,7 +351,7 @@ vim.keymap.set({ "i", "n" }, "<C-/>", function()
 	end
 end)
 vim.keymap.set("t", "<C-/>", function()
-	local ws = vim.api.nvim_tabpage_list_wins(vim.api.nvim_get_current_tabpage())
+	local ws = vim.api.nvim_tabpage_list_wins(0)
 	if #ws > 1 then
 		TERM_COLS = vim.api.nvim_win_get_width(0)
 		TERM_ROWS = vim.api.nvim_win_get_height(0)
@@ -363,99 +371,37 @@ vim.keymap.set({ "t", "n" }, "<C-w>z", function()
 	end
 end)
 
--- git blame
-BLAME_NS = vim.api.nvim_create_namespace("virt_text_blame")
-vim.keymap.set("n", "<leader>gb", function()
-	if vim.b.blame_on then
-		virt_text("clear_all", BLAME_NS)
-		vim.b.blame_on = false
-		return
-	end
-	vim.cmd("update")
-	local file_path = vim.fn.expand("%:p")
-	local line_start = 1
-	local line_end = vim.api.nvim_buf_line_count(0)
-	local cmd = { "git", "blame", "--line-porcelain", "-L", line_start .. "," .. line_end, "--", file_path }
-	local result = vim.fn.systemlist(cmd)
-	if vim.v.shell_error ~= 0 or #result == 0 then
-		vim.notify("Can't blame...", vim.log.levels.ERROR, { Title = "blame" })
-		return
-	end
-	local entries = {}
-	local current = 0
-	for _, line in ipairs(result) do
-		if line:match("^author ") then
-			table.insert(entries, {})
-			current = current + 1
-			entries[current].author = line:gsub("^author ", "")
-		elseif line:match("^author%-time ") then
-			entries[current].time = os.date("%Y-%m-%d", tonumber(line:gsub("^author%-time ", ""), 10))
-		elseif line:match("^summary ") then
-			entries[current].summary = line:gsub("^summary ", "")
-			if #entries[current].summary > 40 then
-				entries[current].summary = entries[current].summary:sub(1, 40):gsub("[\r\n ]+$", "") .. ".."
-			end
-		end
-	end
-	for line = line_start, line_end do
-		local msg = string.format(
-			"%s [%s@%s]",
-			entries[line].author ~= "Not Committed Yet" and entries[line].summary or "?",
-			entries[line].author or "?",
-			entries[line].time or "?"
-		)
-		virt_text("show_line", BLAME_NS, msg, line)
-	end
-	vim.b.blame_on = true
-end)
-
 -- git diffs
-DIFF_TAB = nil
-vim.keymap.set("n", "<leader>gd", ":DiffviewToggle<CR>", { silent = true })
-vim.keymap.set("n", "<leader>gp", function()
-	vim.ui.input({ prompt = "Commit: ", default = "wip" }, function(msg)
-		if msg == nil or msg == "" then
+vim.keymap.set("n", "<leader>gd", function()
+	if vim.t.is_git_diff then
+		vim.cmd("DiffviewClose")
+	else
+		local branches = vim.fn.systemlist({ "git", "branch" })
+		if vim.v.shell_error ~= 0 or #branches == 0 then
+			vim.notify("Not in a git repo...", vim.log.levels.ERROR)
 			return
 		end
-		vim.system({ "git", "commit", "-m", msg }, {}, function(out)
-			vim.schedule(function()
-				if out.code ~= 0 then
-					vim.notify((out.stdout .. out.stderr):gsub("[\n]$", ""), vim.log.levels.ERROR)
+		table.insert(branches, 1, "HEAD")
+		for i, b in ipairs(branches) do
+			branches[i] = b:gsub("^%*?%s*", "", 1)
+		end
+		vim.ui.select(branches, { prompt = "Diff against: " }, function(branch)
+			if branch then
+				if branch == "HEAD" then
+					vim.cmd("DiffviewOpen")
 				else
-					vim.notify((out.stdout .. out.stderr):gsub("[\n]$", ""), vim.log.levels.INFO)
-					vim.system({ "git", "push" }, {}, function(out)
-						vim.schedule(function()
-							if out.code ~= 0 then
-								vim.notify((out.stdout .. out.stderr):gsub("[\n]$", ""), vim.log.levels.ERROR)
-							else
-								vim.notify((out.stdout .. out.stderr):gsub("[\n]$", ""), vim.log.levels.INFO)
-							end
-						end)
-					end)
+					vim.cmd("DiffviewOpen " .. branch .. " -u")
 				end
-			end)
+			end
 		end)
-	end)
+	end
 end)
 
+-- general
 vim.lsp.log.set_level("ERROR")
 
--- general
 function send_key(key, mode)
 	vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, false, true), mode, true)
-end
-
-function virt_text(toggle, ns, text, line, hl)
-	if toggle == "show_line" then
-		hl = hl or "Comment"
-		vim.api.nvim_buf_set_extmark(0, ns, line - 1, 0, {
-			virt_text = { { text, hl } },
-			virt_text_pos = "eol_right_align",
-			hl_mode = "combine",
-		})
-	elseif toggle == "clear_all" then
-		vim.api.nvim_buf_clear_namespace(0, ns, 0, -1)
-	end
 end
 
 Toggle = {}
@@ -474,6 +420,12 @@ function Toggle:toggle()
 end
 function Toggle:set(b)
 	self.value = b
+end
+
+local function merge_hls(src, dst, opts)
+	local hl = vim.api.nvim_get_hl(0, { name = src })
+	hl = vim.tbl_extend("force", hl, opts)
+	vim.api.nvim_set_hl(0, dst, hl)
 end
 
 -- hover
@@ -818,7 +770,7 @@ require("lazy").setup({
 								fmt = function(name, ctx)
 									local win = vim.api.nvim_tabpage_get_win(ctx.tabId)
 									local buf = vim.api.nvim_win_get_buf(win)
-									if ctx.tabId == DIFF_TAB then
+									if vim.t[ctx.tabId].is_git_diff then
 										name = "git-diff"
 									elseif vim.bo[buf].buftype ~= "" then
 										name = vim.bo[buf].buftype
@@ -909,8 +861,13 @@ require("lazy").setup({
 		},
 
 		{
+			"tpope/vim-fugitive",
+			cmd = { "Git", "G" },
+		},
+
+		{
 			"dlyongemallo/diffview-plus.nvim",
-			cmd = "DiffviewToggle",
+			cmd = { "DiffviewOpen" },
 			opts = {
 				enhanced_diff_hl = false,
 				view = {
@@ -934,29 +891,36 @@ require("lazy").setup({
 				},
 				hooks = {
 					view_opened = function(view)
-						DIFF_TAB = view.tabpage
-					end,
-					view_closed = function()
-						DIFF_TAB = nil
+						vim.t.is_git_diff = true
 					end,
 				},
 			},
 			config = function(_, opts)
 				require("diffview").setup(opts)
-				vim.api.nvim_set_hl(0, "DiffviewDiffDelete", { bg = "#551100" })
-				vim.api.nvim_set_hl(0, "DiffviewDiffChange", { bg = "#004411" })
-				vim.api.nvim_set_hl(0, "DiffviewDiffTextInline", { link = "DiffviewDiffChange" })
-				vim.api.nvim_set_hl(0, "DiffviewDiffAdd", { link = "DiffviewDiffChange" })
-				vim.api.nvim_set_hl(0, "DiffviewStatusModified", { link = "LineNr" })
-				vim.api.nvim_set_hl(0, "DiffviewFilePanelSelected", { link = "CursorLineNr" })
+				vim.api.nvim_set_hl(0, "DiffviewDiffDelete", { link = "DiffDelete" })
+				vim.api.nvim_set_hl(0, "DiffviewDiffChange", { link = "DiffAdd" })
+				vim.api.nvim_set_hl(0, "DiffviewDiffTextInline", { link = "DiffAdd" })
+				vim.api.nvim_set_hl(0, "DiffviewDiffAdd", { link = "DiffAdd" })
+				merge_hls("diffChanged", "DiffviewStatusModified", { bg = "NONE", bold = true })
+				merge_hls("diffAdded", "DiffviewStatusUntracked", { bg = "NONE", bold = true })
+				merge_hls("diffRemoved", "DiffviewStatusDeleted", { bg = "NONE", bold = true })
+				merge_hls("diffAdded", "DiffviewStatusAdded", { bg = "NONE", bold = true })
+				vim.api.nvim_set_hl(0, "DiffviewFilePanelSelected", { link = "CursorLineNr" }) -------- simple func to drop bg, set to none
 				vim.api.nvim_set_hl(0, "DiffviewFilePanelFileName", { link = "LineNr" })
 				vim.api.nvim_set_hl(0, "DiffviewFilePanelInsertions", { bold = true, fg = "#009900" })
 				vim.api.nvim_set_hl(0, "DiffviewFilePanelDeletions", { bold = true, fg = "#990000" })
 				vim.api.nvim_set_hl(0, "DiffviewNormal", { link = "LineNr" })
 				vim.api.nvim_set_hl(0, "DiffviewDim1", { link = "LineNr" })
-				local lineNr = vim.api.nvim_get_hl(0, { name = "LineNr" })
-				vim.api.nvim_set_hl(0, "DiffviewFilePanelPath", { fg = lineNr.fg, bg = lineNr.bg, italic = true })
 				-- X undo cmd in :mess
+				-- force to respect unstaged-files flag
+				local adapter = require("diffview.vcs.adapters.git").GitAdapter
+				local orig = adapter.show_untracked
+				adapter.show_untracked = function(self, opt)
+					if opt and opt.dv_opt and opt.dv_opt.show_untracked == true then
+						return true
+					end
+					return orig(self, opt)
+				end
 			end,
 		},
 

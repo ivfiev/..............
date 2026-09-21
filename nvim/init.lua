@@ -199,15 +199,30 @@ if arg ~= "" and vim.fn.isdirectory(arg) == 1 then
 	vim.opt.shadafile = "NONE"
 	IS_DIRECTORY_SESSION = true
 end
-local function drop_garbage_bufs() -- only leaves normal project files
+local function only_files() -- only leaves normal project files. :ls!
+	-- drop diff tabs
+	local tabs = vim.api.nvim_list_tabpages()
+	for _, t in ipairs(tabs) do
+		if vim.t[t].is_git_diff then
+			pcall(vim.cmd.tabclose, vim.api.nvim_tabpage_get_number(t))
+		end
+	end
+	-- kill unreadable/scratch bufs
 	local bufs = vim.api.nvim_list_bufs()
+	local pwd = IS_DIRECTORY_SESSION and vim.fn.getcwd()
 	for _, buf in ipairs(bufs) do
 		local fullpath = vim.api.nvim_buf_get_name(buf)
-		if vim.bo[buf].buftype ~= "" or vim.fn.filereadable(fullpath) == 0 then
+		if
+			vim.bo[buf].buftype ~= ""
+			or vim.fn.filereadable(fullpath) == 0
+			or (pwd and fullpath:find(pwd, 1, true) ~= 1)
+		then
 			vim.api.nvim_buf_delete(buf, { force = true })
 		end
 	end
 end
+vim.api.nvim_create_user_command("OnlyFiles", only_files, {})
+vim.keymap.set("n", "<leader>OF", only_files)
 vim.api.nvim_create_autocmd("VimEnter", {
 	callback = function()
 		if IS_DIRECTORY_SESSION then
@@ -226,22 +241,15 @@ vim.api.nvim_create_autocmd("VimEnter", {
 			vim.schedule(function()
 				vim.cmd("SessionLoad")
 				-- kill garbage bufs
-				vim.defer_fn(drop_garbage_bufs, 25)
+				vim.defer_fn(only_files, 25)
 			end)
 		end
 	end,
 })
 vim.api.nvim_create_autocmd("VimLeavePre", {
 	callback = function()
-		-- drop diff tabs
-		local tabs = vim.api.nvim_list_tabpages()
-		for _, t in ipairs(tabs) do
-			if vim.t[t].is_git_diff then
-				pcall(vim.cmd.tabclose, vim.api.nvim_tabpage_get_number(t))
-			end
-		end
 		-- drop garbage bufs again for good measure
-		drop_garbage_bufs()
+		only_files()
 		-- if in a project - store session
 		if IS_DIRECTORY_SESSION then
 			vim.cmd("SessionSave")
@@ -369,7 +377,7 @@ vim.keymap.set({ "t", "n" }, "<C-w>z", function()
 	end
 end)
 
--- git diffs
+-- git
 vim.keymap.set("n", "<leader>gd", function()
 	if vim.t.is_git_diff then
 		vim.cmd("DiffviewClose")
@@ -403,6 +411,7 @@ vim.keymap.set("n", "<leader>gp", function()
 		vim.cmd("G push")
 	end)
 end)
+vim.keymap.set("n", "<leader>gb", ":G blame<CR>", { silent = true })
 
 -- general
 vim.lsp.log.set_level("ERROR")
@@ -774,6 +783,8 @@ require("lazy").setup({
 									local buf = vim.api.nvim_win_get_buf(win)
 									if vim.t[ctx.tabId].is_git_diff then
 										name = "git-diff"
+									elseif vim.bo[buf].filetype:find("fugitive", 1, true) == 1 then
+										name = vim.bo[buf].filetype
 									elseif vim.bo[buf].buftype ~= "" then
 										name = vim.bo[buf].buftype
 									end
@@ -864,12 +875,12 @@ require("lazy").setup({
 
 		{
 			"tpope/vim-fugitive",
-			cmd = { "Git", "G" },
+			cmd = { "Git", "G", "Gdiffsplit" },
 		},
 
 		{
 			"dlyongemallo/diffview-plus.nvim",
-			cmd = { "DiffviewOpen" },
+			cmd = "DiffviewOpen",
 			opts = {
 				enhanced_diff_hl = false,
 				view = {
@@ -895,6 +906,28 @@ require("lazy").setup({
 					view_opened = function(view)
 						vim.t.is_git_diff = true
 					end,
+				},
+				keymaps = {
+					diff1_inline = { -- tab, s-tab, gf, ]c, [c, g?, s/S, l
+						{
+							"n",
+							"]c",
+							function()
+								require("diffview.actions").next_inline_hunk()
+								vim.cmd("norm! zz")
+							end,
+							{ desc = "next change" },
+						},
+						{
+							"n",
+							"[c",
+							function()
+								require("diffview.actions").prev_inline_hunk()
+								vim.cmd("norm! zz")
+							end,
+							{ desc = "prev change" },
+						},
+					},
 				},
 			},
 			config = function(_, opts)
@@ -1123,6 +1156,7 @@ require("lazy").setup({
 				},
 			},
 			opts = {
+				notify_on_error = false,
 				format_on_save = function(bufnr)
 					local disable_filetypes = { c = true, cpp = true, cs = true } -- .editorconfig
 					if disable_filetypes[vim.bo[bufnr].filetype] then

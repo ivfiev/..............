@@ -783,15 +783,13 @@ require("lazy").setup({
 									local buf = vim.api.nvim_win_get_buf(win)
 									if vim.t[ctx.tabId].is_git_diff then
 										name = "git-diff"
-									elseif vim.bo[buf].filetype:find("fugitive", 1, true) == 1 then
-										name = vim.bo[buf].filetype
-									elseif vim.bo[buf].buftype ~= "" then
-										name = vim.bo[buf].buftype
+									elseif ctx.buftype ~= "" then
+										name = (ctx.filetype ~= "" and ctx.filetype) or ctx.buftype
 									end
 									if vim.bo[buf].modified then
 										name = name .. " ✎"
 									end
-									if #vim.api.nvim_list_tabpages() > 1 then
+									if ctx.tabnr > 1 or vim.fn.tabpagenr("$") > 1 then
 										name = ctx.tabnr .. " " .. name
 									end
 									return name

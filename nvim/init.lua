@@ -178,6 +178,9 @@ vim.api.nvim_create_autocmd("BufReadPost", {
 		pcall(vim.cmd, [[norm! g`"zz]])
 	end,
 })
+vim.api.nvim_create_autocmd("FocusGained", {
+	command = "checktime",
+})
 
 -- shadas & sessions
 vim.api.nvim_create_user_command("SessionSave", function()
@@ -1073,9 +1076,6 @@ require("lazy").setup({
 						current_line = true,
 						source = "if_many",
 						spacing = 2,
-						format = function(diagnostic)
-							return diagnostic.message
-						end,
 					},
 				})
 

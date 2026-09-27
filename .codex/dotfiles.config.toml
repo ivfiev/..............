@@ -1,0 +1,12 @@
+[tui]
+status_line = ["model-with-reasoning", "current-dir", "five-hour-limit", "weekly-limit", "context-used"]
+status_line_use_colors = true
+whimsy = false
+animations = false
+vim_mode_default = true
+alternate_screen = "never"
+screen_reader_detection_done = true
+
+[tui.keymap.vim_normal]
+move_line_start = "shift-h"
+move_line_end = "shift-l"

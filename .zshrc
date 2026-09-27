@@ -50,14 +50,12 @@ alias grep='grep --color=auto'
 alias cp='cp -v'
 alias rm='rm -vI' # -r
 alias mv='mv -v'
-alias oh-come-on="/home/$USER/dev/oh-come-on/bin/oh-come-on"
-alias pgitp="/home/$USER/dev/pgitp/pgitp.sh"
+alias vim=nvim
 
-export PATH=$PATH:$HOME/.ghcup/bin
-
+# export PATH=$PATH:$HOME/.ghcup/bin
+export ROCM_PATH=/opt/rocm
 export EDITOR=nvim
 export SUDO_EDITOR=nvim
-alias vim=nvim
 
 export FZF_DEFAULT_OPTS="--height=96% --style=full --color='border:#27a1b9,scrollbar:#27a1b9,pointer:#27a1b9,bg+:#002244,marker:#00cccc,prompt:#00cccc' --layout=reverse"
 
@@ -101,4 +99,13 @@ fff() {
 zle -N fff
 bindkey '^Ff' fff
 
-export ROCM_PATH=/opt/rocm
+codex() {
+    local unit="codex-${$}-${RANDOM}.scope"
+    systemd-run --user --scope --quiet \
+        --unit="$unit" \
+        "$HOME/.local/bin/codex" --profile dotfiles "$@"
+    local s=$?
+    systemctl --user stop "$unit"
+    return "$s"
+    # systemctl --user list-units --all
+}

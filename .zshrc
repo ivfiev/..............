@@ -52,10 +52,16 @@ alias rm='rm -vI' # -r
 alias mv='mv -v'
 alias vim=nvim
 
-# export PATH=$PATH:$HOME/.ghcup/bin
+export DOTNET_ROOT="$HOME/.dotnet"
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+export DOTNET_NOLOGO=1
+
 export ROCM_PATH=/opt/rocm
+
 export EDITOR=nvim
 export SUDO_EDITOR=nvim
+
+export PATH="$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools"
 
 export FZF_DEFAULT_OPTS="--height=96% --style=full --color='border:#27a1b9,scrollbar:#27a1b9,pointer:#27a1b9,bg+:#002244,marker:#00cccc,prompt:#00cccc' --layout=reverse"
 

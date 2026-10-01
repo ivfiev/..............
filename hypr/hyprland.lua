@@ -245,13 +245,6 @@ hl.window_rule({
 })
 hl.window_rule({
 	name = "",
-	match = { class = "steam" },
-	float = true,
-	center = true,
-	size = { 1200, 800 },
-})
-hl.window_rule({
-	name = "",
 	match = { focus = true },
 	no_blur = true,
 })
@@ -265,11 +258,6 @@ hl.window_rule({
 })
 hl.window_rule({
 	name = "",
-	match = { class = "csxax" },
-	border_size = 0,
-	rounding = 0,
-	no_anim = 1,
-	no_blur = 1,
-	no_focus = 1,
-	no_shadow = 1,
+	match = { title = "^Heroes of Might and Magic III: Horn of the Abyss$" },
+	fullscreen = true,
 })

@@ -19,12 +19,12 @@ vim.opt.winborder = "rounded"
 vim.opt.shortmess:append("I")
 vim.opt.showtabline = 0
 vim.opt.laststatus = 3
-vim.opt.sessionoptions = "buffers,folds,tabpages" -- options(!), curdir, tabpages
+vim.opt.sessionoptions = "buffers,folds,tabpages,winsize" -- options(!), curdir, tabpages
 
 vim.opt.tabstop = 4
 vim.opt.shiftwidth = 0
 vim.opt.expandtab = true
-vim.opt.autoindent = false
+vim.opt.autoindent = true
 vim.opt.smartindent = false
 
 vim.keymap.set({ "n", "x" }, "q", "<Nop>")
@@ -156,14 +156,14 @@ vim.api.nvim_create_autocmd("RecordingEnter", {
 	callback = function()
 		local reg = vim.fn.reg_recording()
 		if reg ~= "" then
-			vim.notify("Recording @ '" .. reg .. "'", vim.log.levels.INFO, { Title = "Macro" })
+			vim.notify("Recording @ '" .. reg .. "'", vim.log.levels.INFO)
 		end
 	end,
 })
 vim.api.nvim_create_autocmd("RecordingLeave", {
 	callback = function()
 		local reg = vim.fn.reg_recording()
-		vim.notify("Recorded @ '" .. reg .. "'", vim.log.levels.INFO, { Title = "Macro" })
+		vim.notify("Recorded @ '" .. reg .. "'", vim.log.levels.INFO)
 	end,
 })
 vim.api.nvim_create_autocmd("FileType", {
@@ -323,12 +323,15 @@ vim.keymap.set("n", "<leader>t", function()
 end)
 vim.keymap.set("t", "<S-Esc>", [[<C-\><C-n>]])
 vim.keymap.set("t", "<C-o>", [[<C-\><C-n><C-o>]])
-vim.api.nvim_create_autocmd({ "TermOpen", "BufEnter", "TabEnter", "WinResized" }, {
+vim.api.nvim_create_autocmd({ "TermOpen", "BufEnter", "TabEnter" }, {
 	callback = function()
 		if vim.bo.buftype == "terminal" and vim.bo.filetype == "" then
+			local buf = vim.api.nvim_get_current_buf()
 			vim.schedule(function()
-				LAST_TERM = vim.api.nvim_get_current_buf()
-				vim.cmd("startinsert")
+				if vim.api.nvim_get_current_buf() == buf then
+					LAST_TERM = buf
+					vim.cmd("startinsert")
+				end
 			end)
 		end
 	end,
@@ -730,12 +733,7 @@ require("lazy").setup({
 
 				vim.keymap.set("n", "''", builtin.buffers)
 
-				vim.keymap.set("n", "gb", function()
-					builtin.live_grep({
-						search_dirs = { vim.fn.expand("%:p") },
-						prompt_title = "Live Grep (Current buffer)",
-					})
-				end)
+				vim.keymap.set("n", "gb", builtin.current_buffer_fuzzy_find)
 				vim.keymap.set("n", "gB", function()
 					builtin.live_grep({
 						grep_open_files = true,
@@ -986,9 +984,6 @@ require("lazy").setup({
 						enabled = false,
 					},
 				},
-				jump = {
-					-- autojump = true,
-				},
 				label = {
 					rainbow = {
 						enabled = false,
@@ -1001,8 +996,7 @@ require("lazy").setup({
 					"m",
 					mode = { "n", "x" },
 					function()
-						require("flash").remote()
-						--require("flash").treesitter()
+						require("flash").jump() -- remote() is op-pending..
 					end,
 				},
 			},
@@ -1046,7 +1040,7 @@ require("lazy").setup({
 							vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
 						end, "Inlay hints")
 
-						map("<C-Space>", vim.lsp.buf.signature_help, "Sighelp", { "n", "i" })
+						-- map("<C-Space>", vim.lsp.buf.signature_help, "Sighelp", { "n" }) -- cycle overloads with C-w + C-s
 
 						-- Fuzzy find all the symbols in your current document.
 						map("gDs", telescope.lsp_document_symbols, "Open Document Symbols")
@@ -1106,7 +1100,6 @@ require("lazy").setup({
 					settings = {
 						gopls = {
 							staticcheck = true,
-							semanticTokens = true,
 							hints = {
 								assignVariableTypes = true,
 								compositeLiteralFields = true,
@@ -1203,7 +1196,7 @@ require("lazy").setup({
 					nerd_font_variant = "mono",
 				},
 				completion = {
-					-- `<c-space>` to show the documentation.
+					-- `<c-space>` to show the documentation/suggest params. (insert mode)
 					-- `auto_show = true` to show the documentation after a delay.
 					documentation = { auto_show = true, auto_show_delay_ms = 100 },
 					list = {
@@ -1234,6 +1227,7 @@ require("lazy").setup({
 				},
 			},
 		},
+
 		-- debuggers
 		{
 			"mfussenegger/nvim-dap",
@@ -1373,6 +1367,8 @@ require("lazy").setup({
 		{
 			"GustavEikaas/easy-dotnet.nvim",
 			ft = "cs",
+			enabled = vim.env.DOTNET_ROOT ~= nil and vim.env.DOTNET_ROOT ~= "",
+			-- cond = true,
 			config = function()
 				vim.cmd("compiler dotnet")
 				vim.g.dotnet_errors_only = true
@@ -1381,6 +1377,9 @@ require("lazy").setup({
 				dotnet.setup({
 					auto_bootstrap_namespace = {
 						type = "file_scoped",
+					},
+					notifications = {
+						handler = false,
 					},
 					lsp = {
 						auto_refresh_codelens = false,

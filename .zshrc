@@ -61,7 +61,7 @@ export ROCM_PATH=/opt/rocm
 export EDITOR=nvim
 export SUDO_EDITOR=nvim
 
-export PATH="$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools"
+export PATH="$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools:$HOME/.local/bin"
 
 export FZF_DEFAULT_OPTS="--height=96% --style=full --color='border:#27a1b9,scrollbar:#27a1b9,pointer:#27a1b9,bg+:#002244,marker:#00cccc,prompt:#00cccc' --layout=reverse"
 

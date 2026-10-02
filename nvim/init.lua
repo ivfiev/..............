@@ -1367,7 +1367,7 @@ require("lazy").setup({
 		{
 			"GustavEikaas/easy-dotnet.nvim",
 			ft = "cs",
-			enabled = vim.env.DOTNET_ROOT ~= nil and vim.env.DOTNET_ROOT ~= "",
+			enabled = vim.fn.executable("dotnet") == 1,
 			-- cond = true,
 			config = function()
 				vim.cmd("compiler dotnet")

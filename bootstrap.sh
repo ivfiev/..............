@@ -12,7 +12,7 @@ sudo pacman -Syu --needed wget greetd kitty git fd neovim ripgrep hyprland keyd 
     dmidecode fastfetch strace iotop papirus-icon-theme power-profiles-daemon pavucontrol grim slurp smartmontools python lazygit yazi base-devel \
     python-gobject xdg-desktop-portal-gtk xdg-desktop-portal-hyprland gnome-system-monitor gnome-themes-extra wl-clipboard noto-fonts-emoji \
     unzip ncdu bluetui radeontop hyprpicker brightnessctl ffmpeg imagemagick upx jq time fzf tree bat chafa less vulkan-radeon vulkan-tools tree-sitter-cli \
-    swayimg openbsd-netcat
+    swayimg openbsd-netcat go vivaldi podman
 
 echo -e "[terminal]\nvt = 1\n\n[default_session]\ncommand = \"start-hyprland\"\nuser = \"$USER\"" | sudo tee /etc/greetd/config.toml
 sudo systemctl enable greetd
@@ -34,7 +34,6 @@ cp ~/dots/.zshrc ~/
 cp ~/dots/toggle-waybar.sh ~/
 cp ~/dots/random-wallpapers.sh ~/
 cp ~/dots/select-wallpaper.sh ~/
-cp ~/dots/exec-past-cmd.zsh ~/
 cp ~/dots/wofi-mullvad-switch-host.py ~/
 cp ~/dots/wlogout.sh ~/
 
@@ -59,11 +58,11 @@ git clone https://github.com/zsh-users/zsh-completions.git ~/.zsh/zsh-completion
 git clone https://github.com/zsh-users/zsh-autosuggestions.git ~/.zsh/zsh-autosuggestions
 chsh -s $(which zsh)
 
+go telemetry off
 sudo sed -i '/^OPTIONS=/ s/\bdebug\b/!debug/' /etc/makepkg.conf
 git clone https://aur.archlinux.org/yay.git ~/dev/yay
 cd ~/dev/yay
 makepkg -si
-go telemetry off
 yay -Syu fatrace catproccpuinfogrepmhz
 
 sudo sed -i 's/^GRUB_TIMEOUT *= *[0-9]*$/GRUB_TIMEOUT=0/' /etc/default/grub
@@ -89,3 +88,5 @@ reboot
 # .zsh_history
 # powerprofilesctl
 # extra/mullvad-vpn
+# /etc/systemd/journald.conf
+# amdgpu.sh

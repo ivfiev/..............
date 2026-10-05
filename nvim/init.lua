@@ -179,7 +179,19 @@ vim.api.nvim_create_autocmd("BufReadPost", {
 	end,
 })
 vim.api.nvim_create_autocmd("FocusGained", {
-	command = "checktime",
+	callback = function()
+		local bufs = vim.api.nvim_list_bufs()
+		for _, buf in ipairs(bufs) do
+			if
+				vim.bo[buf].buftype == ""
+				and vim.api.nvim_buf_is_loaded(buf)
+				and not vim.bo[buf].modified
+				and vim.api.nvim_buf_get_name(buf) ~= ""
+			then
+				pcall(vim.cmd.checktime, buf)
+			end
+		end
+	end,
 })
 
 -- shadas & sessions
@@ -201,6 +213,7 @@ local arg = vim.fn.argv(0)
 if arg ~= "" and vim.fn.isdirectory(arg) == 1 then
 	vim.opt.shadafile = "NONE"
 	IS_DIRECTORY_SESSION = true
+	ORIGINAL_DIRECTORY = vim.fn.getcwd()
 end
 local function only_files() -- only leaves normal project files. :ls!
 	-- drop diff tabs
@@ -273,6 +286,13 @@ for i = 1, 9 do
 		pcall(vim.cmd.tabnext, i)
 	end)
 end
+vim.keymap.set("n", "ZR", function()
+	only_files()
+	if IS_DIRECTORY_SESSION then
+		vim.cmd("cd " .. ORIGINAL_DIRECTORY)
+	end
+	vim.cmd("norm! ZR")
+end)
 
 -- highlighting
 vim.keymap.set("n", "*", function()
@@ -893,10 +913,10 @@ require("lazy").setup({
 				file_panel = {
 					listing_style = "list", -- "tree"
 					list_options = {
-						path_style = "full",
+						path_style = "basename",
 					},
 					win_config = {
-						width = "auto", -- little jittery
+						width = 36, -- "auto"
 					},
 					show_branch_name = true,
 					always_show_sections = true,
@@ -1073,7 +1093,14 @@ require("lazy").setup({
 					},
 				})
 
-				local capabilities = require("blink.cmp").get_lsp_capabilities()
+				local capabilities = require("blink.cmp").get_lsp_capabilities({
+					workspace = {
+						didChangeWatchedFiles = {
+							dynamicRegistration = true,
+							relativePatternSupport = true,
+						},
+					},
+				})
 
 				vim.lsp.config("lua_ls", {
 					capabilities = capabilities,
@@ -1099,6 +1126,9 @@ require("lazy").setup({
 					capabilities = capabilities,
 					settings = {
 						gopls = {
+							buildFlags = {
+								"-tags=integration",
+							},
 							staticcheck = true,
 							hints = {
 								assignVariableTypes = true,
@@ -1368,7 +1398,7 @@ require("lazy").setup({
 			"GustavEikaas/easy-dotnet.nvim",
 			ft = "cs",
 			enabled = vim.fn.executable("dotnet") == 1,
-			-- cond = true,
+			cond = false,
 			config = function()
 				vim.cmd("compiler dotnet")
 				vim.g.dotnet_errors_only = true

@@ -209,7 +209,6 @@ hl.window_rule({
 	match = { class = ".*" },
 	suppress_event = "maximize",
 })
-
 hl.window_rule({
 	name = "fix-xwayland-drags",
 	match = {
@@ -222,7 +221,6 @@ hl.window_rule({
 	},
 	no_focus = true,
 })
-
 hl.window_rule({
 	name = "move-hyprland-run",
 	match = { class = "hyprland-run" },
@@ -232,9 +230,15 @@ hl.window_rule({
 
 hl.window_rule({
 	name = "",
-	match = { class = "bluetui|nm-connection-editor|(.*pavucontrol.*)" },
+	match = { focus = true },
+	no_blur = true,
+})
+hl.window_rule({
+	name = "",
+	match = { class = [[bluetui|nm-connection-editor|org\.pulseaudio\.pavucontrol|steam|Matplotlib]] },
 	float = true,
 	maximize = false,
+	center = true,
 	size = { 1200, 900 },
 })
 hl.window_rule({
@@ -242,19 +246,6 @@ hl.window_rule({
 	match = { class = "swayimg" },
 	float = true,
 	maximize = true,
-})
-hl.window_rule({
-	name = "",
-	match = { focus = true },
-	no_blur = true,
-})
-hl.window_rule({
-	name = "",
-	match = { class = "Matplotlib" },
-	float = true,
-	maximize = false,
-	center = true,
-	size = { 1600, 1000 },
 })
 hl.window_rule({
 	name = "",

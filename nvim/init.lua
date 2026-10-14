@@ -95,7 +95,7 @@ vim.keymap.set({ "x" }, ">", ">gv")
 vim.keymap.set({ "x" }, "<", "<gv")
 
 vim.keymap.set({ "n", "i", "x" }, "<C-s>", function()
-	vim.cmd("silent w")
+	vim.cmd("silent update")
 	vim.cmd("stopinsert")
 	-- vim.cmd("redraw")
 end, { silent = true })

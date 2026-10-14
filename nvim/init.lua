@@ -141,9 +141,14 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	end,
 })
 vim.api.nvim_create_autocmd("BufWinEnter", {
-	callback = function()
-		if vim.bo.filetype == "help" then
-			vim.cmd("wincmd L")
+	callback = function(args)
+		local ft = vim.bo[args.buf].filetype
+		if ft == "help" then
+			vim.cmd.wincmd("L")
+		elseif ft == "fugitive" then
+			vim.cmd.wincmd("H") -- ("T") vim.cmd.only()
+		elseif ft == "DiffviewFiles" then
+			vim.keymap.set("n", "q", ":DiffviewClose<CR>", { buf = args.buf, nowait = true, silent = true })
 		end
 	end,
 })
@@ -945,6 +950,42 @@ require("lazy").setup({
 								vim.cmd("norm! zz")
 							end,
 							{ desc = "prev change" },
+						},
+					},
+					file_panel = {
+						{
+							"n",
+							"<C-d>",
+							function()
+								require("diffview.actions").scroll_view(0.5)()
+							end,
+						},
+						{
+							"n",
+							"<C-u>",
+							function()
+								require("diffview.actions").scroll_view(-0.5)()
+							end,
+						},
+						{
+							"n",
+							"]c",
+							function()
+								vim.cmd.wincmd("l")
+								require("diffview.actions").next_inline_hunk()
+								vim.cmd("norm! zz")
+								require("diffview.actions").focus_files()
+							end,
+						},
+						{
+							"n",
+							"[c",
+							function()
+								vim.cmd.wincmd("l")
+								require("diffview.actions").prev_inline_hunk()
+								vim.cmd("norm! zz")
+								require("diffview.actions").focus_files()
+							end,
 						},
 					},
 				},

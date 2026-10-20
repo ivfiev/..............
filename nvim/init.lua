@@ -104,6 +104,10 @@ vim.keymap.set("n", "<leader>lr", ":lsp restart<CR>")
 
 vim.keymap.set("n", "<X1Mouse>", "<C-o>")
 vim.keymap.set("n", "<X2Mouse>", "<C-i>")
+vim.keymap.set("n", "<C-ScrollWheelDown>", "5zl")
+vim.keymap.set("n", "<C-ScrollWheelUp>", "5zh")
+vim.keymap.set("n", "<S-ScrollWheelDown>", "<C-d>zz")
+vim.keymap.set("n", "<S-ScrollWheelUp>", "<C-u>zz")
 
 vim.keymap.set({ "n", "x" }, "{", "<CMD>keepjumps norm! {<CR>", { silent = true })
 vim.keymap.set({ "n", "x" }, "}", "<CMD>keepjumps norm! }<CR>", { silent = true })
@@ -128,7 +132,7 @@ end)
 
 vim.keymap.set({ "x", "n" }, "<C-u>", "<C-u>zz")
 vim.keymap.set({ "x", "n" }, "<C-d>", "<C-d>zz")
-vim.keymap.set("n", "zz", "mz0zz`z")
+vim.keymap.set("n", "zz", "zHzz")
 
 -- random autocmds
 vim.api.nvim_set_hl(0, "OnYankHighlight", { bg = "#FF4400" })

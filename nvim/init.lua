@@ -264,7 +264,9 @@ vim.api.nvim_create_autocmd("VimEnter", {
 			vim.cmd("rshada!")
 			-- restore sesh
 			vim.schedule(function()
-				vim.cmd("SessionLoad")
+				if not restarting(vim.v.startreason) then
+					vim.cmd("SessionLoad")
+				end
 				-- kill garbage bufs
 				vim.defer_fn(only_files, 25)
 			end)
@@ -276,11 +278,14 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
 		-- drop garbage bufs again for good measure
 		only_files()
 		-- if in a project - store session
-		if IS_DIRECTORY_SESSION then
+		if IS_DIRECTORY_SESSION and not restarting(vim.v.exitreason) then
 			vim.cmd("SessionSave")
 		end
 	end,
 })
+function restarting(reason)
+	return type(reason) == "string" and reason:find("restart", 1, true)
+end
 -- marks
 for l in string.gmatch("abcdefghijklmnopqrstuvwxyz", ".") do
 	local u = string.upper(l)

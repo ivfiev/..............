@@ -1,22 +1,13 @@
-# maybe drop this
-fpath+=~/.zsh/zsh-completions/src
-# The following lines were added by compinstall
+PS1='%F{cyan}[%n %F{magenta}%~%f%F{cyan}] '
 
 zstyle ':completion:*' list-colors ''
-zstyle :compinstall filename '~/.zshrc'
-
 autoload -Uz compinit edit-command-line
 zle -N edit-command-line
-
-compinit
-# End of lines added by compinstall
-#
-PS1='%F{cyan}[%n %F{magenta}%~%f%F{cyan}] '
+compinit 
 
 HISTFILE=~/.zsh_history
 HISTSIZE=20000
 SAVEHIST=20000
-setopt inc_append_history
 setopt share_history
 setopt hist_ignore_dups
 setopt hist_reduce_blanks
@@ -66,7 +57,7 @@ export PATH="$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools:$HOME/.local/bin"
 export FZF_DEFAULT_OPTS="--height=96% --style=full --color='border:#27a1b9,scrollbar:#27a1b9,pointer:#27a1b9,bg+:#002244,marker:#00cccc,prompt:#00cccc' --layout=reverse"
 
 ffh() {
-  local cmd=$(history 0 | tac | fzf --no-sort | sed 's/^[ 0-9]\+//') || return 0
+  local cmd=$(history 0 | tac | fzf --no-sort | sed 's/^[ \*0-9]\+//') || return 0
   if [[ -n "$cmd" ]]; then 
     BUFFER+="$cmd"
     CURSOR=$#BUFFER

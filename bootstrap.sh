@@ -54,7 +54,6 @@ sudo chown root:root /etc/NetworkManager/conf.d/wifi-powersave-off.conf
 
 mkdir -p ~/.zsh
 git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.zsh/zsh-syntax-highlighting
-git clone https://github.com/zsh-users/zsh-completions.git ~/.zsh/zsh-completions
 git clone https://github.com/zsh-users/zsh-autosuggestions.git ~/.zsh/zsh-autosuggestions
 chsh -s $(which zsh)
 

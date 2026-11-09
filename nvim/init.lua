@@ -102,8 +102,8 @@ end, { silent = true })
 
 vim.keymap.set("n", "<leader>lr", ":lsp restart<CR>")
 
-vim.keymap.set("n", "<X1Mouse>", "<C-o>")
-vim.keymap.set("n", "<X2Mouse>", "<C-i>")
+vim.keymap.set({ "n", "x" }, "<X1Mouse>", "<Esc><C-o>")
+vim.keymap.set({ "n", "x" }, "<X2Mouse>", "<Esc><C-i>")
 vim.keymap.set("n", "<C-ScrollWheelDown>", "5zl")
 vim.keymap.set("n", "<C-ScrollWheelUp>", "5zh")
 vim.keymap.set("n", "<S-ScrollWheelDown>", "<C-d>zz")
@@ -1068,6 +1068,16 @@ require("lazy").setup({
 					function()
 						require("flash").jump() -- remote() is op-pending..
 					end,
+				},
+			},
+		},
+
+		{
+			"MeanderingProgrammer/render-markdown.nvim",
+			opts = {
+				heading = {
+					width = "block",
+					sign = false,
 				},
 			},
 		},

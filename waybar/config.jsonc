@@ -91,8 +91,8 @@
         "interval": 10,
         "states": {
             "good": 95,
-            "warning": 20,
-            "critical": 10
+            "warning": 9,
+            "critical": 8
         },
         "format": "{icon}",
         "format-charging": "",
@@ -100,7 +100,7 @@
         "format-full": "",
         "format-alt": "{icon} {capacity}%",
         "format-icons": ["󰂃", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
-        "tooltip-format": "{capacity}%\n{time}\n{power}W"
+        "tooltip-format": "{capacity}%\n{time}\n{power}W\n{cycles} @ {health}%"
     },
 
     "backlight": {
@@ -151,6 +151,7 @@
     "custom/power": {
         "format": "⏻",
         "on-click": "sh ~/wlogout.sh",
+        // "on-click": "sh ~/reset-mclk.sh && sh ~/wlogout.sh",
         "tooltip": false
     }    
 }

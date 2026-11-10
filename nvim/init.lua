@@ -286,6 +286,7 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
 function restarting(reason)
 	return type(reason) == "string" and reason:find("restart", 1, true)
 end
+
 -- marks
 for l in string.gmatch("abcdefghijklmnopqrstuvwxyz", ".") do
 	local u = string.upper(l)
@@ -654,7 +655,12 @@ require("lazy").setup({
 				local treesitter = require("nvim-treesitter")
 				local available = treesitter.get_available()
 				local installed = treesitter.get_installed()
+				local only_semtoks = { "go" } -- TS not maintained? would test debug break if skip install?
 				local function start_treesitter(buf, lang)
+					if vim.list_contains(only_semtoks, lang) then -- install but don't enable
+						vim.cmd("setloc syntax=OFF")
+						return
+					end
 					vim.treesitter.start(buf, lang)
 					vim.wo[0][0].foldexpr = "v:lua.vim.treesitter.foldexpr()"
 					vim.wo[0][0].foldmethod = "expr"
